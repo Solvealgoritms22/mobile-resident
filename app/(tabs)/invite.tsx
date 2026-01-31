@@ -1,0 +1,630 @@
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, Image, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
+import React from 'react';
+import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/context/auth-context';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import { useTranslation } from '@/context/translation-context';
+
+export default function InviteScreen() {
+    const { user, token } = useAuth();
+    const { showToast } = useToast();
+    const { t, language } = useTranslation();
+    const router = useRouter();
+    const [step, setStep] = useState(1);
+    const [visitorName, setVisitorName] = useState('');
+    const [visitorId, setVisitorId] = useState('');
+    const [plate, setPlate] = useState('');
+    const [duration, setDuration] = useState('4');
+    const [loading, setLoading] = useState(false);
+    const [qrCode, setQrCode] = useState('');
+    const [accessCode, setAccessCode] = useState('');
+    const [companions, setCompanions] = useState('0');
+    const [image, setImage] = useState<string | null>(null);
+    const [assignedSpaces, setAssignedSpaces] = useState<any[]>([]);
+    const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (step === 1) {
+            fetchProfile();
+        }
+    }, [step]);
+
+    const fetchProfile = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/auth/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data?.residentProfile?.assignedSpaces) {
+                setAssignedSpaces(response.data.residentProfile.assignedSpaces);
+            }
+        } catch (error) {
+            console.error('Error fetching profile for spaces:', error);
+        }
+    };
+
+    const pickImage = async () => {
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.5,
+            base64: true,
+        });
+
+        if (!result.canceled) {
+            setImage('data:image/jpeg;base64,' + result.assets[0].base64);
+        }
+    };
+
+    const handleCreate = async () => {
+        if (!visitorName) {
+            showToast(t('enterName'), 'error');
+            return;
+        }
+        setLoading(true);
+        try {
+            const validFrom = new Date();
+            const validUntil = new Date(Date.now() + parseInt(duration) * 60 * 60 * 1000);
+
+            const response = await axios.post(`${API_URL}/visits`, {
+                hostId: user?.id,
+                visitorName,
+                visitorIdNumber: visitorId,
+                licensePlate: plate || undefined,
+                validFrom: validFrom.toISOString(),
+                validUntil: validUntil.toISOString(),
+                companionCount: parseInt(companions) || 0,
+                spaceId: selectedSpaceId || undefined,
+                images: image ? JSON.stringify([image]) : undefined,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setQrCode(response.data.qrCode);
+            setAccessCode(response.data.accessCode);
+            showToast(t('visitCreated'), 'success');
+            setStep(2);
+        } catch (error: any) {
+            showToast(error.response?.data?.message || t('failedCreateVisit'), 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleShare = async () => {
+        const message = `${t('shareSubject')}\n\n${t('shareGreeting')} ${visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${accessCode}\n*${t('shareDuration')}:* ${duration} ${t('hoursAbbr')}\n\n${t('shareInstructions')}\n\n${t('shareClosing')}`;
+        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                // Fallback to generic share if WhatsApp specifies failure
+                Alert.alert('Sharing', message);
+            }
+        } catch (error) {
+            console.error('Failed to share via WhatsApp:', error);
+            Alert.alert('Sharing', message);
+        }
+    };
+
+    if (step === 2) {
+        return (
+            <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
+                <ScrollView
+                    contentContainerStyle={[styles.content, { alignItems: 'center', paddingTop: 80, paddingBottom: 150 }]}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <BlurView intensity={80} tint="dark" style={styles.successIconBlur}>
+                        <View style={styles.successIcon}>
+                            <Ionicons name="checkmark" size={40} color="#ffffff" />
+                        </View>
+                    </BlurView>
+                    <Text style={styles.successTitle}>{t('invitationCreated')}</Text>
+                    <Text style={styles.successSubtitle}>{t('validFor')} {duration} {t('hoursAbbr')}</Text>
+
+                    <BlurView intensity={40} tint="dark" style={styles.qrCard}>
+                        <QRCode
+                            value={qrCode || JSON.stringify({ name: visitorName, plate, valid: true })}
+                            size={200}
+                            backgroundColor="transparent"
+                            color="#ffffff"
+                        />
+                        <View style={styles.accessCodeContainer}>
+                            <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
+                            <Text style={styles.accessCodeValue}>{accessCode}</Text>
+                        </View>
+                        <Text style={styles.visitorNameLabel}>{visitorName}</Text>
+                        <Text style={styles.plateLabel}>{plate || t('noVehicle')}</Text>
+                        {selectedSpaceId && (
+                            <View style={styles.successSpaceBadge}>
+                                <Ionicons name="car" size={16} color="#10b981" />
+                                <Text style={styles.successSpaceText}>
+                                    {t('tabVehicles')}: {assignedSpaces.find(s => s.id === selectedSpaceId)?.name || t('active')}
+                                </Text>
+                            </View>
+                        )}
+                    </BlurView>
+
+                    <TouchableOpacity onPress={handleShare} activeOpacity={0.8} style={{ width: '100%' }}>
+                        <LinearGradient colors={['#25D366', '#1da851']} style={styles.shareButton}>
+                            <Ionicons name="logo-whatsapp" size={24} color="#ffffff" />
+                            <Text style={styles.shareButtonText}>{t('shareWhatsApp')}</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={() => { setStep(1); setVisitorName(''); setPlate(''); setVisitorId(''); setCompanions('0'); setImage(null); }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.closeButtonText}>{t('createAnother')}</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </LinearGradient>
+        );
+    }
+
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+        >
+            <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
+                <BlurView intensity={80} tint="dark" style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#ffffff" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>{t('newInvitation')}</Text>
+                    <View style={{ width: 40 }} />
+                </BlurView>
+
+                <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
+                    <BlurView intensity={20} tint="dark" style={styles.inputCard}>
+                        <Text style={styles.label}>{t('visitorName')}</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="John Doe"
+                            placeholderTextColor="#64748b"
+                            value={visitorName}
+                            onChangeText={setVisitorName}
+                        />
+                    </BlurView>
+
+                    <BlurView intensity={20} tint="dark" style={styles.inputCard}>
+                        <Text style={styles.label}>{t('visitorIdOptional')}</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="123-456-789"
+                            placeholderTextColor="#64748b"
+                            value={visitorId}
+                            onChangeText={setVisitorId}
+                        />
+                    </BlurView>
+
+                    <BlurView intensity={20} tint="dark" style={styles.inputCard}>
+                        <Text style={styles.label}>{t('vehiclePlateOptional')}</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="ABC-123"
+                            placeholderTextColor="#64748b"
+                            value={plate}
+                            onChangeText={setPlate}
+                            autoCapitalize="characters"
+                        />
+                    </BlurView>
+
+                    <BlurView intensity={20} tint="dark" style={styles.inputCard}>
+                        <Text style={styles.label}>{t('companionsOptional')}</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder={t('numGuests')}
+                            placeholderTextColor="#64748b"
+                            value={companions}
+                            onChangeText={setCompanions}
+                            keyboardType="numeric"
+                        />
+                    </BlurView>
+
+                    <Text style={styles.sectionTitleSmall}>{t('identityPhoto')}</Text>
+                    <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+                        {image ? (
+                            <Image source={{ uri: image }} style={styles.previewImage} />
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <Ionicons name="camera" size={32} color="#3b82f6" />
+                                <Text style={styles.imagePlaceholderText}>{t('takePhoto')}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    {image && (
+                        <Pressable onPress={() => setImage(null)} style={styles.removeImage}>
+                            <Text style={styles.removeImageText}>{t('removePhoto')}</Text>
+                        </Pressable>
+                    )}
+
+                    {assignedSpaces.length > 0 && (
+                        <>
+                            <Text style={styles.sectionTitleSmall}>{t('parkingAllocationOptional')}</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.spaceSelector}>
+                                <TouchableOpacity
+                                    style={[styles.spaceOption, !selectedSpaceId && styles.spaceOptionActive]}
+                                    onPress={() => setSelectedSpaceId(null)}
+                                >
+                                    <BlurView intensity={!selectedSpaceId ? 50 : 20} tint="dark" style={styles.spaceBlur}>
+                                        <Text style={[styles.spaceText, !selectedSpaceId && styles.spaceTextActive]}>{t('onFoot')}</Text>
+                                    </BlurView>
+                                </TouchableOpacity>
+                                {assignedSpaces.map((space) => (
+                                    <TouchableOpacity
+                                        key={space.id}
+                                        style={[
+                                            styles.spaceOption,
+                                            selectedSpaceId === space.id && styles.spaceOptionActive,
+                                            space.isOccupied && styles.spaceOptionOccupied
+                                        ]}
+                                        onPress={() => !space.isOccupied && setSelectedSpaceId(space.id)}
+                                        disabled={space.isOccupied}
+                                    >
+                                        <BlurView intensity={selectedSpaceId === space.id ? 50 : 20} tint="dark" style={styles.spaceBlur}>
+                                            <Ionicons
+                                                name={space.isOccupied ? "lock-closed" : "car"}
+                                                size={14}
+                                                color={space.isOccupied ? "#ef4444" : (selectedSpaceId === space.id ? "#ffffff" : "#94a3b8")}
+                                                style={{ marginBottom: 2 }}
+                                            />
+                                            <Text style={[
+                                                styles.spaceText,
+                                                selectedSpaceId === space.id && styles.spaceTextActive,
+                                                space.isOccupied && styles.spaceTextOccupied
+                                            ]}>
+                                                {space.name}
+                                            </Text>
+                                            {space.isOccupied && <Text style={styles.occupiedLabel}>{t('busy')}</Text>}
+                                        </BlurView>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </>
+                    )}
+
+                    <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
+                    <View style={styles.durationSelector}>
+                        {['2', '4', '8', '24'].map((hr) => (
+                            <TouchableOpacity
+                                key={hr}
+                                style={[styles.durationOption, duration === hr && styles.durationOptionActive]}
+                                onPress={() => setDuration(hr)}
+                                activeOpacity={0.7}
+                            >
+                                <BlurView intensity={duration === hr ? 50 : 20} tint="dark" style={styles.durationBlur}>
+                                    <Text style={[styles.durationText, duration === hr && styles.durationTextActive]}>{hr}{t('hoursAbbr')}</Text>
+                                </BlurView>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <Button
+                        title={t('generatePass')}
+                        onPress={handleCreate}
+                        loading={loading}
+                        icon="qr-code"
+                        style={{ marginTop: 20 }}
+                    />
+                </ScrollView>
+            </LinearGradient>
+        </KeyboardAvoidingView>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    content: {
+        padding: 24,
+        flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 24,
+        paddingTop: Platform.OS === 'ios' ? 60 : 60,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+        overflow: 'hidden',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    form: {
+        padding: 24,
+        paddingBottom: 100,
+        gap: 16,
+    },
+    inputCard: {
+        borderRadius: 20,
+        padding: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        marginBottom: 8,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+        marginBottom: 8,
+    },
+    sectionTitleSmall: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+        marginTop: 8,
+        marginBottom: 12,
+    },
+    input: {
+        fontSize: 16,
+        color: '#ffffff',
+        fontWeight: '500',
+    },
+    durationSelector: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 32,
+    },
+    durationOption: {
+        flex: 1,
+        height: 60,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    durationBlur: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    durationOptionActive: {
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+    },
+    durationText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#94a3b8',
+    },
+    durationTextActive: {
+        color: '#ffffff',
+    },
+    // Parking Spaces
+    spaceSelector: {
+        flexDirection: 'row',
+        marginBottom: 20,
+    },
+    spaceOption: {
+        width: 100,
+        height: 50,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        marginRight: 10,
+    },
+    spaceOptionOccupied: {
+        borderColor: 'rgba(239, 68, 68, 0.4)',
+        opacity: 0.8,
+    },
+    spaceTextOccupied: {
+        color: 'rgba(255, 255, 255, 0.4)',
+    },
+    occupiedLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#ef4444',
+        textTransform: 'uppercase',
+        marginTop: -2,
+    },
+    spaceBlur: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    spaceOptionActive: {
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+    },
+    spaceText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+    },
+    spaceTextActive: {
+        color: '#ffffff',
+    },
+    // Success State
+    successIconBlur: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        overflow: 'hidden',
+        marginBottom: 24,
+    },
+    successIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#10b981',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#10b981',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.6,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    successTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        marginBottom: 8,
+    },
+    successSubtitle: {
+        fontSize: 16,
+        color: '#94a3b8',
+        marginBottom: 32,
+    },
+    qrCard: {
+        width: '100%',
+        padding: 32,
+        borderRadius: 32,
+        alignItems: 'center',
+        marginBottom: 40,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    accessCodeContainer: {
+        marginTop: 24,
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    accessCodeLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#94a3b8',
+        letterSpacing: 1.5,
+        marginBottom: 4,
+    },
+    accessCodeValue: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        letterSpacing: 4,
+    },
+    visitorNameLabel: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        marginTop: 16,
+    },
+    plateLabel: {
+        fontSize: 16,
+        color: '#94a3b8',
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    shareButton: {
+        height: 56,
+        borderRadius: 16,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 16,
+        shadowColor: '#25D366',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    shareButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        alignItems: 'center',
+        padding: 16,
+        marginTop: 8,
+    },
+    closeButtonText: {
+        color: '#94a3b8',
+        fontWeight: '600',
+    },
+    successSpaceBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    successSpaceText: {
+        color: '#10b981',
+        fontSize: 13,
+        fontWeight: 'bold',
+    },
+    imagePicker: {
+        height: 150,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderStyle: 'dashed',
+        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    imagePlaceholder: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    imagePlaceholderText: {
+        color: '#3b82f6',
+        fontWeight: '600',
+    },
+    removeImage: {
+        alignItems: 'center',
+        marginTop: 4,
+        marginBottom: 12,
+    },
+    removeImageText: {
+        color: '#ef4444',
+        fontSize: 14,
+    },
+});
