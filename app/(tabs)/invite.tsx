@@ -356,7 +356,11 @@ export default function InviteScreen() {
                     </TouchableOpacity>
 
                     <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
-                    <View style={styles.durationSelector}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.durationSelector}
+                    >
                         {[
                             { value: '2', label: `2${t('hoursAbbr')}` },
                             { value: '4', label: `4${t('hoursAbbr')}` },
@@ -373,11 +377,20 @@ export default function InviteScreen() {
                                 activeOpacity={0.7}
                             >
                                 <BlurView intensity={duration === opt.value ? 50 : 20} tint="dark" style={styles.durationBlur}>
-                                    <Text style={[styles.durationText, duration === opt.value && styles.durationTextActive]}>{opt.label}</Text>
+                                    <Text
+                                        style={[
+                                            styles.durationText,
+                                            duration === opt.value && styles.durationTextActive,
+                                            opt.label.length > 4 && { fontSize: 13 }
+                                        ]}
+                                        numberOfLines={1}
+                                    >
+                                        {opt.label}
+                                    </Text>
                                 </BlurView>
                             </TouchableOpacity>
                         ))}
-                    </View>
+                    </ScrollView>
 
                     <Button
                         title={t('generatePass')}
@@ -456,16 +469,17 @@ const styles = StyleSheet.create({
     },
     durationSelector: {
         flexDirection: 'row',
-        gap: 12,
+        paddingRight: 24,
         marginBottom: 32,
     },
     durationOption: {
-        flex: 1,
+        width: 85,
         height: 60,
         borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.1)',
+        marginRight: 10,
     },
     durationBlur: {
         flex: 1,
