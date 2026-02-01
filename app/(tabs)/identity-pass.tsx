@@ -1,12 +1,13 @@
-import { View, Text, StyleSheet, Pressable, Dimensions, Platform, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { useAuth } from '@/context/auth-context';
-import { API_URL } from '@/constants/api';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +17,15 @@ export default function IdentityPassScreen() {
     const router = useRouter();
     const { user } = useAuth();
     const { t } = useTranslation();
+    const [imageError, setImageError] = React.useState(false);
+
+    const getInitials = (name: string) => {
+        return name?.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2) || 'R';
+    };
 
     if (!user) return null;
 
@@ -28,81 +38,100 @@ export default function IdentityPassScreen() {
         timestamp: new Date().toISOString()
     });
 
-    const getProfileImage = () => {
-        if (!user.profileImage) return null;
-        if (user.profileImage.startsWith('http')) return user.profileImage;
-        return `${API_URL}${user.profileImage}`;
+    const getImageUrl = (path?: string) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        return `${baseUrl}${normalizedPath}`;
     };
+
+    const getProfileImage = () => {
+        return getImageUrl(user.profileImage);
+    };
+
+    // Reset error on image change
+    React.useEffect(() => {
+        setImageError(false);
+    }, [user.profileImage]);
 
     return (
         <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
-            <View style={styles.content}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#ffffff" />
-                    </Pressable>
-                    <Text style={styles.title}>{t('identityPass')}</Text>
-                    <View style={{ width: 40 }} />
-                </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                <View style={styles.content}>
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Pressable onPress={() => router.back()} style={styles.backButton}>
+                            <Ionicons name="arrow-back" size={24} color="#ffffff" />
+                        </Pressable>
+                        <Text style={styles.title}>{t('identityPass')}</Text>
+                        <View style={{ width: 40 }} />
+                    </View>
 
-                {/* Main Pass Card */}
-                <BlurView intensity={80} tint="dark" style={styles.passCard}>
-                    <LinearGradient
-                        colors={['rgba(59, 130, 246, 0.1)', 'rgba(59, 130, 246, 0.05)']}
-                        style={StyleSheet.absoluteFill}
-                    />
+                    {/* Main Pass Card */}
+                    <BlurView intensity={80} tint="dark" style={styles.passCard}>
+                        <LinearGradient
+                            colors={['rgba(59, 130, 246, 0.1)', 'rgba(59, 130, 246, 0.05)']}
+                            style={StyleSheet.absoluteFill}
+                        />
 
-                    <View style={styles.userInfo}>
-                        <View style={styles.avatarContainer}>
-                            {getProfileImage() ? (
-                                <Image source={{ uri: getProfileImage()! }} style={styles.avatarImage} />
-                            ) : (
-                                <View style={styles.avatarPlaceholder}>
-                                    <Ionicons name="person" size={40} color="#3b82f6" />
+                        <View style={styles.userInfo}>
+                            <View style={styles.avatarContainer}>
+                                {(getProfileImage() && !imageError) ? (
+                                    <Image
+                                        source={{ uri: getProfileImage() || undefined }}
+                                        style={styles.avatarImage}
+                                        contentFit="cover"
+                                        transition={500}
+                                        onError={() => setImageError(true)}
+                                    />
+                                ) : (
+                                    <View style={styles.avatarFallback}>
+                                        <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={styles.roleLabel}>{t('resident').toUpperCase()}</Text>
+                            <Text style={styles.userName}>{user.name}</Text>
+                            <Text style={styles.userEmail}>{user.email}</Text>
+                            {user.residentProfile?.unitNumber && (
+                                <View style={styles.unitBadge}>
+                                    <Ionicons name="business" size={14} color="#3b82f6" style={{ marginRight: 6 }} />
+                                    <Text style={styles.unitText}>{user.residentProfile.unitNumber}</Text>
                                 </View>
                             )}
                         </View>
-                        <Text style={styles.roleLabel}>{t('resident').toUpperCase()}</Text>
-                        <Text style={styles.userName}>{user.name}</Text>
-                        <Text style={styles.userEmail}>{user.email}</Text>
-                        {user.residentProfile?.unitNumber && (
-                            <View style={styles.unitBadge}>
-                                <Ionicons name="business" size={14} color="#3b82f6" style={{ marginRight: 6 }} />
-                                <Text style={styles.unitText}>{user.residentProfile.unitNumber}</Text>
+
+                        <View style={styles.qrContainer}>
+                            <View style={styles.qrWrapper}>
+                                <QRCode
+                                    value={qrValue}
+                                    size={width * 0.55}
+                                    color="#ffffff"
+                                    backgroundColor="transparent"
+                                />
                             </View>
-                        )}
-                    </View>
-
-                    <View style={styles.qrContainer}>
-                        <View style={styles.qrWrapper}>
-                            <QRCode
-                                value={qrValue}
-                                size={width * 0.55}
-                                color="#ffffff"
-                                backgroundColor="transparent"
-                            />
+                            <Text style={styles.scanHint}>{t('scanHint')}</Text>
                         </View>
-                        <Text style={styles.scanHint}>{t('scanHint')}</Text>
-                    </View>
 
-                    <View style={styles.footerInfo}>
-                        <View style={styles.statusBadge}>
-                            <View style={styles.activeDot} />
-                            <Text style={styles.statusText}>{t('verifiedIdentity')}</Text>
+                        <View style={styles.footerInfo}>
+                            <View style={styles.statusBadge}>
+                                <View style={styles.activeDot} />
+                                <Text style={styles.statusText}>{t('verifiedIdentity')}</Text>
+                            </View>
+                            <Text style={styles.expiryInfo}>{t('lastUpdated')}</Text>
                         </View>
-                        <Text style={styles.expiryInfo}>{t('lastUpdated')}</Text>
-                    </View>
-                </BlurView>
+                    </BlurView>
 
-                {/* Security Note */}
-                <View style={styles.noteContainer}>
-                    <Ionicons name="shield-checkmark" size={20} color="#94a3b8" />
-                    <Text style={styles.noteText}>
-                        {t('personalNote')}
-                    </Text>
+                    {/* Security Note */}
+                    <View style={styles.noteContainer}>
+                        <Ionicons name="shield-checkmark" size={20} color="#94a3b8" />
+                        <Text style={styles.noteText}>
+                            {t('personalNote')}
+                        </Text>
+                    </View>
                 </View>
-            </View>
+            </ScrollView>
         </LinearGradient>
     );
 }
@@ -114,7 +143,11 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 24,
+        paddingTop: Platform.OS === 'ios' ? 20 : 20,
+    },
+    scrollContent: {
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingBottom: 40,
     },
     header: {
         flexDirection: 'row',
@@ -169,6 +202,18 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
+    },
+    avatarFallback: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarText: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#3b82f6',
     },
     avatarPlaceholder: {
         width: '100%',

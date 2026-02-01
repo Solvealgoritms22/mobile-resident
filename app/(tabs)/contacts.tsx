@@ -5,10 +5,11 @@ import { useTranslation } from '@/context/translation-context';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ContactsScreen() {
     const router = useRouter();
@@ -17,6 +18,15 @@ export default function ContactsScreen() {
     const [contacts, setContacts] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+    const getImageUrl = (path?: string) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        return `${baseUrl}${normalizedPath}`;
+    };
 
     useEffect(() => {
         fetchContacts();
@@ -115,10 +125,13 @@ export default function ContactsScreen() {
                             <BlurView key={contact.id} intensity={40} tint="dark" style={styles.contactCard}>
                                 <View style={styles.contactInfo}>
                                     <View style={styles.avatarContainer}>
-                                        {contact.profileImage ? (
+                                        {(contact.profileImage && !imageErrors[contact.id]) ? (
                                             <Image
-                                                source={{ uri: contact.profileImage.startsWith('http') ? contact.profileImage : `${API_URL}${contact.profileImage}` }}
+                                                source={{ uri: getImageUrl(contact.profileImage) || undefined }}
                                                 style={styles.avatar}
+                                                contentFit="cover"
+                                                transition={500}
+                                                onError={() => setImageErrors(prev => ({ ...prev, [contact.id]: true }))}
                                             />
                                         ) : (
                                             <View style={[styles.avatarFallback, { backgroundColor: contact.role === 'ADMIN' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(59, 130, 246, 0.2)' }]}>

@@ -2,10 +2,11 @@ import { API_URL } from '@/constants/api';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,28 @@ export default function DashboardScreen() {
   const [loading, setLoading] = React.useState(true);
   const [selectedVisit, setSelectedVisit] = React.useState<any>(null);
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
+
+  const getImageUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${normalizedPath}`;
+  };
+
+  const getInitials = (name: string) => {
+    return name?.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2) || 'R';
+  };
+
+  // Reset image error when profile image changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [user?.profileImage]);
 
   const sendEmergency = async () => {
     setLoading(true);
@@ -115,17 +138,19 @@ export default function DashboardScreen() {
               <Text style={styles.userName}>{user?.name || t('resident')}</Text>
               <Text style={styles.badge}>{user?.email}</Text>
             </View>
-            {user?.profileImage ? (
+            {(user?.profileImage && !imageError) ? (
               <View style={styles.headerAvatarContainer}>
                 <Image
-                  source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `${API_URL}${user.profileImage}` }}
+                  source={{ uri: getImageUrl(user.profileImage) || undefined }}
                   style={styles.headerAvatar}
+                  contentFit="cover"
+                  transition={500}
+                  onError={() => setImageError(true)}
                 />
               </View>
             ) : (
-              <View style={styles.statusBadge}>
-                <View style={styles.statusDot} />
-                <Text style={styles.statusText}>{t('home')}</Text>
+              <View style={styles.headerAvatarFallback}>
+                <Text style={styles.avatarText}>{getInitials(user?.name || '')}</Text>
               </View>
             )}
           </View>
@@ -182,7 +207,7 @@ export default function DashboardScreen() {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/invite' as any)}
           >
-            <BlurView intensity={70} tint="dark" style={styles.actionBlur}>
+            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}>
                 <Ionicons name="person-add" size={24} color="#3b82f6" />
               </View>
@@ -194,7 +219,7 @@ export default function DashboardScreen() {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/parking' as any)}
           >
-            <BlurView intensity={70} tint="dark" style={styles.actionBlur}>
+            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.2)' }]}>
                 <Ionicons name="car-sport" size={24} color="#10b981" />
               </View>
@@ -206,7 +231,7 @@ export default function DashboardScreen() {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/report' as any)}
           >
-            <BlurView intensity={70} tint="dark" style={styles.actionBlur}>
+            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(139, 92, 246, 0.2)' }]}>
                 <Ionicons name="document-text" size={24} color="#8b5cf6" />
               </View>
@@ -218,7 +243,7 @@ export default function DashboardScreen() {
             style={styles.actionButton}
             onPress={() => router.push('/(tabs)/contacts' as any)}
           >
-            <BlurView intensity={70} tint="dark" style={styles.actionBlur}>
+            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(249, 115, 22, 0.2)' }]}>
                 <Ionicons name="call" size={24} color="#f97316" />
               </View>
@@ -251,7 +276,7 @@ export default function DashboardScreen() {
               );
             }}
           >
-            <BlurView intensity={70} tint="dark" style={[styles.actionBlur, { borderColor: 'rgba(239, 68, 68, 0.3)' }]}>
+            <BlurView intensity={60} tint="dark" style={[styles.actionBlur, { borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
                 <Ionicons name="warning" size={24} color="#ef4444" />
               </View>
@@ -399,6 +424,21 @@ const styles = StyleSheet.create({
     height: 48,
     resizeMode: 'cover',
   },
+  headerAvatarFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(59, 130, 246, 0.5)',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3b82f6',
+  },
   statusCardWrapper: {
     marginBottom: 24,
     borderRadius: 24,
@@ -488,8 +528,9 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   actionIconContainer: {
     width: 40,
@@ -509,8 +550,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   activityItem: {
     flexDirection: 'row',
@@ -518,8 +560,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   activityBorder: {
-    borderTopWidth: 1.5,
-    borderTopColor: 'rgba(255, 255, 255, 0.25)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   activityIcon: {
     width: 32,
@@ -564,8 +606,8 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   statNumber: {
