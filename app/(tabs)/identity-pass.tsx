@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: 40,
+        paddingBottom: 140,
     },
     header: {
         flexDirection: 'row',

@@ -54,7 +54,7 @@ export default function DashboardScreen() {
     try {
       await axios.post(`${API_URL}/emergencies`, {
         type: 'RESIDENT_EMERGENCY',
-        location: 'Resident Unit'
+        location: user?.residentProfile?.unitNumber || 'Unit Not Assigned'
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 80,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   headerCard: {
     borderRadius: 20,
