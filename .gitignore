@@ -2,6 +2,8 @@
 
 # dependencies
 node_modules/
+backend-cosevi/
+mobile-security/
 
 # Expo
 .expo/

@@ -1,14 +1,14 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Linking, Platform, Image, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/context/auth-context';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/context/translation-context';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ContactsScreen() {
     const router = useRouter();
@@ -122,11 +122,9 @@ export default function ContactsScreen() {
                                             />
                                         ) : (
                                             <View style={[styles.avatarFallback, { backgroundColor: contact.role === 'ADMIN' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(59, 130, 246, 0.2)' }]}>
-                                                <Ionicons
-                                                    name={contact.role === 'ADMIN' ? 'business' : 'shield-checkmark'}
-                                                    size={24}
-                                                    color={contact.role === 'ADMIN' ? '#8b5cf6' : '#3b82f6'}
-                                                />
+                                                <Text style={[styles.avatarText, { color: contact.role === 'ADMIN' ? '#8b5cf6' : '#3b82f6' }]}>
+                                                    {contact.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)}
+                                                </Text>
                                             </View>
                                         )}
                                     </View>
@@ -247,6 +245,10 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    avatarText: {
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     details: {
         flex: 1,

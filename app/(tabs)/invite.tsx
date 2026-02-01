@@ -1,18 +1,17 @@
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, Image, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import QRCode from 'react-native-qrcode-svg';
-import React from 'react';
-import axios from 'axios';
-import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { API_URL } from '@/constants/api';
-import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 export default function InviteScreen() {
     const { user, token } = useAuth();
@@ -51,18 +50,56 @@ export default function InviteScreen() {
         }
     };
 
-    const pickImage = async () => {
-        const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.5,
-            base64: true,
-        });
+    const requestPermissions = async () => {
+        if (Platform.OS !== 'web') {
+            const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+            const libraryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (cameraStatus.status !== 'granted' || libraryStatus.status !== 'granted') {
+                Alert.alert('Permission Denied', 'We need camera and library permissions to upload images.');
+                return false;
+            }
+        }
+        return true;
+    };
+
+    const pickImage = async (useCamera: boolean) => {
+        const hasPermission = await requestPermissions();
+        if (!hasPermission) return;
+
+        let result;
+        if (useCamera) {
+            result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.5,
+                base64: true,
+            });
+        } else {
+            result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.5,
+                base64: true,
+            });
+        }
 
         if (!result.canceled) {
             setImage('data:image/jpeg;base64,' + result.assets[0].base64);
         }
+    };
+
+    const handleImagePress = () => {
+        Alert.alert(
+            t('identityPhoto'),
+            t('helpPrompt'),
+            [
+                { text: t('takePhoto'), onPress: () => pickImage(true) },
+                { text: t('chooseGallery'), onPress: () => pickImage(false) },
+                { text: t('cancel'), style: 'cancel' }
+            ]
+        );
     };
 
     const handleCreate = async () => {
@@ -124,7 +161,7 @@ export default function InviteScreen() {
         return (
             <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
                 <ScrollView
-                    contentContainerStyle={[styles.content, { alignItems: 'center', paddingTop: 80, paddingBottom: 150 }]}
+                    contentContainerStyle={[styles.content, { alignItems: 'center', paddingTop: 80, paddingBottom: 180 }]}
                     showsVerticalScrollIndicator={false}
                 >
                     <BlurView intensity={80} tint="dark" style={styles.successIconBlur}>
@@ -191,7 +228,7 @@ export default function InviteScreen() {
                     <View style={{ width: 40 }} />
                 </BlurView>
 
-                <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={[styles.form, { paddingBottom: 150 }]} showsVerticalScrollIndicator={false}>
                     <BlurView intensity={20} tint="dark" style={styles.inputCard}>
                         <Text style={styles.label}>{t('visitorName')}</Text>
                         <TextInput
@@ -239,7 +276,7 @@ export default function InviteScreen() {
                     </BlurView>
 
                     <Text style={styles.sectionTitleSmall}>{t('identityPhoto')}</Text>
-                    <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+                    <TouchableOpacity onPress={handleImagePress} style={styles.imagePicker}>
                         {image ? (
                             <Image source={{ uri: image }} style={styles.previewImage} />
                         ) : (
@@ -369,8 +406,8 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1.5,
         marginBottom: 8,
     },
     label: {
@@ -505,8 +542,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 40,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.25)',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.3,

@@ -1,14 +1,14 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useSegments } from 'expo-router';
-import axios from 'axios';
-import { io } from 'socket.io-client';
-import * as Haptics from 'expo-haptics';
-import { Alert, Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { API_URL } from '@/constants/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
+import { useRouter, useSegments } from 'expo-router';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Alert, Platform } from 'react-native';
+import { io } from 'socket.io-client';
 
 interface User {
     id: string;
@@ -87,6 +87,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
 
         const socket = io(API_URL.replace('/api', ''));
+
+        socket.on('visitUpdate', (visit: any) => {
+            console.log('Visit Update Received:', visit);
+            if (visit.hostId === user.id) {
+                if (Platform.OS !== 'web') {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+                const status = visit.status?.replace('_', ' ');
+                Alert.alert(
+                    'Visit Update',
+                    `Visitor ${visit.visitorName} is now ${status}`,
+                    [{ text: 'OK', style: 'default' }]
+                );
+            }
+        });
 
         socket.on('emergencyAlert', (alert: any) => {
             console.log('Emergency Alert Received:', alert);

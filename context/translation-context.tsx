@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export type Language = 'en' | 'es';
 
@@ -11,6 +11,32 @@ interface TranslationContextType {
 
 const translations: Record<Language, Record<string, string>> = {
     en: {
+        // Tabs
+        tabHome: 'Home',
+        tabInvite: 'Invite',
+        tabVehicles: 'Vehicles',
+        tabProfile: 'Profile',
+
+        // Profile
+        residentAccount: 'RESIDENT ACCOUNT',
+        activeMember: 'Active Member',
+        accountDetails: 'Account Details',
+        email: 'Email',
+        identification: 'Identification',
+        phoneNumber: 'Phone Number',
+        accessRole: 'Access Role',
+        settingsSystem: 'Settings & System',
+        pushNotifications: 'Push Notifications',
+        arrivalAlerts: 'Arrival and visit alerts',
+        privacySecurity: 'Privacy & Security',
+        language: 'Language',
+        appLanguage: 'Change app language',
+        signOut: 'Sign Out',
+        signOutConfirm: 'Are you sure you want to sign out?',
+        cancel: 'Cancel',
+        version: 'Version',
+        soon: 'SOON',
+
         // Login
         residentPortal: 'Resident Portal',
         signInSubtitle: 'Sign in to manage your visits',
@@ -46,16 +72,21 @@ const translations: Record<Language, Record<string, string>> = {
         processing: 'Processing...',
         selectSpace: 'Please select a parking space',
         enterName: 'Please enter visitor name',
+        visitCreated: 'Invitation created successfully',
+        failedCreateVisit: 'Failed to create invitation',
         invitationCreated: 'Invitation Created!',
         validFor: 'Valid for',
         manualEntryCode: 'MANUAL ENTRY CODE',
+        noVehicle: 'No Vehicle',
         shareWhatsApp: 'Share on WhatsApp',
         createAnother: 'Create Another',
         visitorIdOptional: 'Visitor ID (Optional)',
         vehiclePlateOptional: 'Vehicle Plate (Optional)',
-        numGuests: 'Number of guests',
         companionsOptional: 'Companions (Optional)',
+        numGuests: 'Number of guests',
+        identityPhoto: 'Document/Identity Photo',
         takePhoto: 'Take Photo',
+        chooseGallery: 'Choose from Gallery',
         removePhoto: 'Remove Photo',
         parkingAllocationOptional: 'Parking Allocation (Optional)',
         onFoot: 'On Foot',
@@ -211,6 +242,7 @@ const translations: Record<Language, Record<string, string>> = {
         numGuests: 'Número de invitados',
         identityPhoto: 'Foto de Documento/Identidad',
         takePhoto: 'Tomar Foto',
+        chooseGallery: 'Elegir de Galería',
         removePhoto: 'Eliminar Foto',
         parkingAllocationOptional: 'Asignación de Parqueo (Opcional)',
         onFoot: 'A Pie',
