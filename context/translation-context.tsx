@@ -126,6 +126,11 @@ const translations: Record<Language, Record<string, string>> = {
         reportSubmittedMessage: 'Your report has been received and will be reviewed shortly.',
         errorReportFailed: 'Failed to submit report. Please try again.',
         errorReportSelectType: 'Please select type and provide description',
+        reportTitle: 'Report',
+        typeMaintenance: 'Maintenance',
+        typeSecurity: 'Security',
+        typeSupport: 'Support',
+        typeOther: 'Other',
 
         // Parking
         parkingStatus: 'Parking Status',
@@ -282,6 +287,11 @@ const translations: Record<Language, Record<string, string>> = {
         reportSubmittedMessage: 'Su reporte ha sido recibido y será revisado pronto.',
         errorReportFailed: 'Error al enviar reporte. Por favor intente de nuevo.',
         errorReportSelectType: 'Por favor seleccione un tipo y proporcione una descripción',
+        reportTitle: 'Reportar Incidente',
+        typeMaintenance: 'Mantenimiento',
+        typeSecurity: 'Seguridad',
+        typeSupport: 'Soporte',
+        typeOther: 'Otro',
 
         // Parking
         parkingStatus: 'Estado del Parqueo',
