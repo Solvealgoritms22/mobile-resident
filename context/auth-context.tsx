@@ -33,6 +33,8 @@ interface AuthContextType {
     logout: () => Promise<void>;
     updateUser: (partialUser: Partial<User>) => Promise<void>;
     updatePushToken: (token: string) => Promise<void>;
+    onDataRefresh: (callback: () => void) => () => void;
+    refreshData: () => void;
 }
 
 Notifications.setNotificationHandler({
@@ -88,8 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const socket = io(API_URL.replace('/api', ''));
 
+
+        socket.on('statusUpdate', (data: any) => {
+            console.log('Status update received:', data);
+            refreshData();
+        });
+
         socket.on('visitUpdate', (visit: any) => {
             console.log('Visit Update Received:', visit);
+            refreshData();
             if (visit.hostId === user.id) {
                 if (Platform.OS !== 'web') {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -142,6 +151,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (responseListener) responseListener.remove();
         };
     }, [user]);
+
+    // Data Refresh Mechanism
+    const refreshCallbacks = React.useRef<(() => void)[]>([]);
+
+    const onDataRefresh = (callback: () => void) => {
+        refreshCallbacks.current.push(callback);
+        return () => {
+            refreshCallbacks.current = refreshCallbacks.current.filter(cb => cb !== callback);
+        };
+    };
+
+    const refreshData = () => {
+        console.log('Triggering global data refresh...');
+        refreshCallbacks.current.forEach(cb => {
+            try {
+                cb();
+            } catch (e) {
+                console.error('Error in refresh callback:', e);
+            }
+        });
+    };
 
     async function registerForPushNotificationsAsync() {
         let token;
@@ -260,7 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser, updatePushToken }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData }}>
             {children}
         </AuthContext.Provider>
     );

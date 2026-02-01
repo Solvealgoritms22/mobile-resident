@@ -15,8 +15,6 @@ import { useToast } from '@/components/ui/Toast';
 import { VisitDetailModal } from '@/components/VisitDetailModal';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
-import * as Haptics from 'expo-haptics';
-import { io } from 'socket.io-client';
 
 export default function DashboardScreen() {
   const { user, token } = useAuth();
@@ -72,6 +70,8 @@ export default function DashboardScreen() {
     }
   };
 
+  const { onDataRefresh } = useAuth();
+
   React.useEffect(() => {
     const fetchData = async () => {
       if (!user) {
@@ -106,24 +106,13 @@ export default function DashboardScreen() {
     };
     fetchData();
 
-    // Socket.io connection for real-time updates
-    const socket = io(API_URL.replace('/api', '')); // Assumes Socket.io runs on root or same port w/o /api prefix
-
-    socket.on('connect', () => {
-      console.log('Socket connected:', socket.id);
-    });
-
-    socket.on('visitUpdate', (data: any) => {
-      // Only update if the visit belongs to this user (host)
-      if (data.hostId === user?.id) {
-        console.log('Real-time update received:', data);
-        fetchData(); // Refresh list
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
+    // Subscribe to global data refresh events
+    const unsubscribe = onDataRefresh(() => {
+      fetchData();
     });
 
     return () => {
-      socket.disconnect();
+      unsubscribe();
     };
   }, [user]);
 

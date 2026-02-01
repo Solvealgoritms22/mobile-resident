@@ -1,17 +1,15 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Platform, Modal, Alert, TextInput } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { VisitDetailModal } from '@/components/VisitDetailModal';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/context/auth-context';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { useRouter } from 'expo-router';
-import { io } from 'socket.io-client';
-import * as Haptics from 'expo-haptics';
-import { VisitDetailModal } from '@/components/VisitDetailModal';
 import { useTranslation } from '@/context/translation-context';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function VisitorsScreen() {
     const { user, token } = useAuth();
@@ -45,27 +43,18 @@ export default function VisitorsScreen() {
         }
     };
 
+    const { onDataRefresh } = useAuth();
+
     useEffect(() => {
         fetchVisitors();
 
-        // Socket.io connection for real-time updates
-        const socket = io(API_URL.replace('/api', ''));
-
-        socket.on('connect', () => {
-            console.log('Visitors Socket connected:', socket.id);
-        });
-
-        socket.on('visitUpdate', (data: any) => {
-            // Only update if the visit belongs to this user (host)
-            if (data.hostId === user?.id) {
-                console.log('Real-time update received in history:', data);
-                fetchVisitors();
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
+        // Subscribe to global data refresh events
+        const unsubscribe = onDataRefresh(() => {
+            fetchVisitors();
         });
 
         return () => {
-            socket.disconnect();
+            unsubscribe();
         };
     }, [user]);
 
