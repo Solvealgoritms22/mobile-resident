@@ -203,7 +203,13 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                             {visit.entryTime && (
                                 <View style={styles.metaRow}>
                                     <Ionicons name="log-in-outline" size={16} color="#10b981" />
-                                    <Text style={styles.metaText}>Entry: {new Date(visit.entryTime).toLocaleString()}</Text>
+                                    <Text style={styles.metaText}>{t('entry')}: {new Date(visit.entryTime).toLocaleString()}</Text>
+                                </View>
+                            )}
+                            {visit.exitTime && (
+                                <View style={styles.metaRow}>
+                                    <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                                    <Text style={styles.metaText}>{t('exit')}: {new Date(visit.exitTime).toLocaleString()}</Text>
                                 </View>
                             )}
                         </View>
