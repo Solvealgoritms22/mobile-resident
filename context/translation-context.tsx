@@ -168,6 +168,13 @@ const translations: Record<Language, Record<string, string>> = {
         noRecentVisitors: 'No recent visitors',
         identityNotSet: 'Identity Not Set',
         emergencyConfirm: 'Do you need immediate assistance?',
+
+        // VIP and Extended Durations
+        vipMember: 'VIP Member',
+        oneMonth: '1 Month',
+        threeMonths: '3 Months',
+        indefinite: 'Indefinite',
+        noVehicleInspection: 'NO VEHICLE INSPECTION',
         securityNotified: 'Security has been notified',
         failedAlert: 'Failed to send alert',
     },
@@ -329,6 +336,13 @@ const translations: Record<Language, Record<string, string>> = {
         noRecentVisitors: 'No hay visitantes recientes',
         identityNotSet: 'Identidad no establecida',
         emergencyConfirm: '¿Necesita asistencia inmediata?',
+
+        // VIP and Extended Durations
+        vipMember: 'Miembro VIP',
+        oneMonth: '1 Mes',
+        threeMonths: '3 Meses',
+        indefinite: 'Indefinido',
+        noVehicleInspection: 'NO REVISAR VEHÍCULO',
         securityNotified: 'Seguridad ha sido notificada',
         failedAlert: 'Error al enviar alerta',
     }

@@ -30,6 +30,7 @@ export default function InviteScreen() {
     const [image, setImage] = useState<string | null>(null);
     const [assignedSpaces, setAssignedSpaces] = useState<any[]>([]);
     const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+    const [isVip, setIsVip] = useState(false);
 
     React.useEffect(() => {
         if (step === 1) {
@@ -122,6 +123,7 @@ export default function InviteScreen() {
                 companionCount: parseInt(companions) || 0,
                 spaceId: selectedSpaceId || undefined,
                 images: image ? JSON.stringify([image]) : undefined,
+                isVip: isVip,
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -337,17 +339,41 @@ export default function InviteScreen() {
                         </>
                     )}
 
+                    <TouchableOpacity
+                        style={styles.vipCheckboxContainer}
+                        onPress={() => setIsVip(!isVip)}
+                        activeOpacity={0.7}
+                    >
+                        <BlurView intensity={20} tint="dark" style={styles.vipCheckboxBlur}>
+                            <View style={[styles.checkbox, isVip && styles.checkboxActive]}>
+                                {isVip && <Ionicons name="checkmark" size={16} color="#ffffff" />}
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.vipLabel}>⭐ {t('vipMember')}</Text>
+                                <Text style={styles.vipSubtext}>{t('noVehicleInspection')}</Text>
+                            </View>
+                        </BlurView>
+                    </TouchableOpacity>
+
                     <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
                     <View style={styles.durationSelector}>
-                        {['2', '4', '8', '24'].map((hr) => (
+                        {[
+                            { value: '2', label: `2${t('hoursAbbr')}` },
+                            { value: '4', label: `4${t('hoursAbbr')}` },
+                            { value: '8', label: `8${t('hoursAbbr')}` },
+                            { value: '24', label: `24${t('hoursAbbr')}` },
+                            { value: '720', label: t('oneMonth') },
+                            { value: '2160', label: t('threeMonths') },
+                            { value: '876000', label: t('indefinite') },
+                        ].map((opt) => (
                             <TouchableOpacity
-                                key={hr}
-                                style={[styles.durationOption, duration === hr && styles.durationOptionActive]}
-                                onPress={() => setDuration(hr)}
+                                key={opt.value}
+                                style={[styles.durationOption, duration === opt.value && styles.durationOptionActive]}
+                                onPress={() => setDuration(opt.value)}
                                 activeOpacity={0.7}
                             >
-                                <BlurView intensity={duration === hr ? 50 : 20} tint="dark" style={styles.durationBlur}>
-                                    <Text style={[styles.durationText, duration === hr && styles.durationTextActive]}>{hr}{t('hoursAbbr')}</Text>
+                                <BlurView intensity={duration === opt.value ? 50 : 20} tint="dark" style={styles.durationBlur}>
+                                    <Text style={[styles.durationText, duration === opt.value && styles.durationTextActive]}>{opt.label}</Text>
                                 </BlurView>
                             </TouchableOpacity>
                         ))}
@@ -663,5 +689,40 @@ const styles = StyleSheet.create({
     removeImageText: {
         color: '#ef4444',
         fontSize: 14,
+    },
+    vipCheckboxContainer: {
+        marginBottom: 20,
+    },
+    vipCheckboxBlur: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(251, 191, 36, 0.3)',
+        overflow: 'hidden',
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#fbbf24',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkboxActive: {
+        backgroundColor: '#fbbf24',
+    },
+    vipLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+    vipSubtext: {
+        fontSize: 12,
+        color: '#fbbf24',
+        marginTop: 2,
     },
 });
