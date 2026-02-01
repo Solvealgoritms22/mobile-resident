@@ -139,10 +139,13 @@ export default function VisitorsScreen() {
                                 </View>
                                 <View style={styles.cardInfo}>
                                     <View style={styles.nameRow}>
-                                        <Text style={styles.visitorName}>{visitor.visitorName}</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                            <Text style={styles.visitorName}>{visitor.visitorName}</Text>
+                                            {visitor.isVip && <Ionicons name="star" size={14} color="#f59e0b" />}
+                                        </View>
                                         <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(visitor.status)}20`, borderColor: `${getStatusColor(visitor.status)}40` }]}>
                                             <Text style={[styles.statusText, { color: getStatusColor(visitor.status) }]}>
-                                                {visitor.status}
+                                                {t(visitor.status?.toLowerCase())}
                                             </Text>
                                         </View>
                                     </View>
@@ -155,7 +158,11 @@ export default function VisitorsScreen() {
                                 <View style={styles.timeInfo}>
                                     <Ionicons name="time-outline" size={14} color="#94a3b8" />
                                     <Text style={styles.timeText}>
-                                        {new Date(visitor.validFrom).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(visitor.validUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(visitor.validFrom).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {
+                                            new Date(visitor.validUntil).getFullYear() > 2100
+                                                ? t('indefinite')
+                                                : new Date(visitor.validUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                        }
                                     </Text>
                                 </View>
                                 {(visitor.status === 'PENDING' || visitor.status === 'APPROVED') && (

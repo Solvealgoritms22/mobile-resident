@@ -87,10 +87,18 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                        {/* Status Ribbon */}
-                        <View style={[styles.statusRibbon, { backgroundColor: `${config.color}20` }]}>
-                            <View style={[styles.statusDot, { backgroundColor: config.color }]} />
-                            <Text style={[styles.statusLabel, { color: config.color }]}>{config.label}</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                            <View style={[styles.statusRibbon, { backgroundColor: `${config.color}20` }]}>
+                                <View style={[styles.statusDot, { backgroundColor: config.color }]} />
+                                <Text style={[styles.statusLabel, { color: config.color }]}>{t(config.label.toLowerCase())}</Text>
+                            </View>
+
+                            {visit.isVip && (
+                                <View style={[styles.statusRibbon, { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
+                                    <Ionicons name="star" size={12} color="#f59e0b" />
+                                    <Text style={[styles.statusLabel, { color: '#f59e0b' }]}>{t('vipMember')}</Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* QR Code Section (if available) */}
@@ -184,7 +192,13 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                             </View>
                             <View style={styles.metaRow}>
                                 <Ionicons name="time-outline" size={16} color="#64748b" />
-                                <Text style={styles.metaText}>Valid Until: {new Date(visit.validUntil).toLocaleString()}</Text>
+                                <Text style={styles.metaText}>
+                                    {t('validUntil')}: {
+                                        new Date(visit.validUntil).getFullYear() > 2100
+                                            ? t('indefinite')
+                                            : new Date(visit.validUntil).toLocaleString()
+                                    }
+                                </Text>
                             </View>
                             {visit.entryTime && (
                                 <View style={styles.metaRow}>

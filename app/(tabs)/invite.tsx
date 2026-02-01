@@ -172,7 +172,14 @@ export default function InviteScreen() {
                         </View>
                     </BlurView>
                     <Text style={styles.successTitle}>{t('invitationCreated')}</Text>
-                    <Text style={styles.successSubtitle}>{t('validFor')} {duration} {t('hoursAbbr')}</Text>
+                    <Text style={styles.successSubtitle}>
+                        {t('validFor')} {
+                            duration === '720' ? t('oneMonth') :
+                                duration === '2160' ? t('threeMonths') :
+                                    duration === '876000' ? t('indefinite') :
+                                        `${duration} ${t('hoursAbbr')}`
+                        }
+                    </Text>
 
                     <BlurView intensity={40} tint="dark" style={styles.qrCard}>
                         <QRCode
