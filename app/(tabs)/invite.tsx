@@ -72,7 +72,7 @@ export default function InviteScreen() {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [4, 3],
-                quality: 0.5,
+                quality: 0.4,
                 base64: true,
             });
         } else {
@@ -80,7 +80,7 @@ export default function InviteScreen() {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [4, 3],
-                quality: 0.5,
+                quality: 0.3,
                 base64: true,
             });
         }
@@ -161,7 +161,7 @@ export default function InviteScreen() {
         return (
             <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
                 <ScrollView
-                    contentContainerStyle={[styles.content, { alignItems: 'center', paddingTop: 80, paddingBottom: 180 }]}
+                    contentContainerStyle={{ padding: 24, alignItems: 'center', paddingTop: 80, paddingBottom: 180 }}
                     showsVerticalScrollIndicator={false}
                 >
                     <BlurView intensity={80} tint="dark" style={styles.successIconBlur}>

@@ -1,22 +1,21 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions, Platform, Alert, TouchableOpacity, Image, Modal } from 'react-native';
+import { API_URL } from '@/constants/api';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import axios from 'axios';
-import { API_URL } from '@/constants/api';
+import { Alert, Dimensions, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { ActivityIndicator } from 'react-native';
-import { io } from 'socket.io-client';
-import * as Haptics from 'expo-haptics';
 import { VisitDetailModal } from '@/components/VisitDetailModal';
+import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import * as Haptics from 'expo-haptics';
+import { io } from 'socket.io-client';
 
 export default function DashboardScreen() {
   const { user, token } = useAuth();
@@ -519,8 +518,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   activityBorder: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopWidth: 1.5,
+    borderTopColor: 'rgba(255, 255, 255, 0.25)',
   },
   activityIcon: {
     width: 32,
@@ -565,8 +564,8 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   statNumber: {
