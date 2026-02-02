@@ -23,6 +23,7 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
     const { showToast } = useToast();
     const { t } = useTranslation();
     const [cancelling, setCancelling] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
 
     if (!visit) return null;
 
@@ -66,6 +67,36 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
         );
     };
 
+    const handleApprove = async () => {
+        setActionLoading(true);
+        try {
+            await axios.patch(`${API_URL}/visits/${visit.id}/approve`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(t('visitApproved'), 'success');
+            onClose();
+        } catch (error: any) {
+            showToast(error.response?.data?.message || 'Failed to approve', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeny = async () => {
+        setActionLoading(true);
+        try {
+            await axios.patch(`${API_URL}/visits/${visit.id}/deny`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(t('visitDenied'), 'success');
+            onClose();
+        } catch (error: any) {
+            showToast(error.response?.data?.message || 'Failed to deny', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const isCancellable = visit.status === 'PENDING' || visit.status === 'APPROVED';
 
     return (
@@ -97,6 +128,13 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                                 <View style={[styles.statusRibbon, { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
                                     <Ionicons name="star" size={12} color="#f59e0b" />
                                     <Text style={[styles.statusLabel, { color: '#f59e0b' }]}>{t('vipMember')}</Text>
+                                </View>
+                            )}
+
+                            {visit.visitorCategory && (
+                                <View style={[styles.statusRibbon, { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}>
+                                    <Ionicons name="bookmark" size={12} color="#3b82f6" />
+                                    <Text style={[styles.statusLabel, { color: '#3b82f6' }]}>{t(visit.visitorCategory.toLowerCase())}</Text>
                                 </View>
                             )}
                         </View>
@@ -216,6 +254,38 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
 
                         {isCancellable && (
                             <View style={{ gap: 12, marginTop: 24 }}>
+                                {visit.status === 'PENDING' && visit.manualEntry && (
+                                    <>
+                                        <TouchableOpacity
+                                            style={styles.approveButton}
+                                            onPress={handleApprove}
+                                            disabled={actionLoading}
+                                        >
+                                            <LinearGradient colors={['#10b981', '#059669']} style={styles.shareGradient}>
+                                                {actionLoading ? (
+                                                    <ActivityIndicator color="#ffffff" size="small" />
+                                                ) : (
+                                                    <>
+                                                        <Ionicons name="checkmark-circle-outline" size={20} color="#ffffff" />
+                                                        <Text style={styles.shareButtonText}>{t('approve')}</Text>
+                                                    </>
+                                                )}
+                                            </LinearGradient>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.denyButton}
+                                            onPress={handleDeny}
+                                            disabled={actionLoading}
+                                        >
+                                            <View style={styles.denyButtonInner}>
+                                                <Ionicons name="close-circle-outline" size={20} color="#ef4444" />
+                                                <Text style={styles.denyButtonText}>{t('deny')}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
+
                                 <TouchableOpacity
                                     style={styles.shareButton}
                                     onPress={async () => {
@@ -258,7 +328,7 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                     </ScrollView>
                 </BlurView>
             </View>
-        </Modal>
+        </Modal >
     );
 };
 
@@ -515,6 +585,32 @@ const styles = StyleSheet.create({
     },
     shareButtonText: {
         color: '#ffffff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    approveButton: {
+        height: 56,
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    denyButton: {
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        overflow: 'hidden',
+    },
+    denyButtonInner: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 12,
+    },
+    denyButtonText: {
+        color: '#ef4444',
         fontSize: 16,
         fontWeight: 'bold',
     },

@@ -191,6 +191,17 @@ const translations: Record<Language, Record<string, string>> = {
         failedAlert: 'Failed to send alert',
         singleEntryPass: 'Single Entry Pass',
         singleEntryPassSubtext: 'Will only allow one entry to the complex',
+        familiar: 'Family',
+        contratista: 'Contractor',
+        empleado: 'Employee',
+        otro: 'Other',
+        visitorCategory: 'Visitor Category',
+        awaitingApproval: 'Awaiting Resident Approval',
+        manualEntryPending: 'Your entry has been registered and is awaiting approval from the resident.',
+        approve: 'Approve Access',
+        deny: 'Deny Access',
+        visitApproved: 'Visit approved successfully',
+        visitDenied: 'Visit denied',
     },
     es: {
         // Tabs
@@ -373,6 +384,17 @@ const translations: Record<Language, Record<string, string>> = {
         failedAlert: 'Error al enviar alerta',
         singleEntryPass: 'Pase de una sola entrada',
         singleEntryPassSubtext: 'Solo permitirá un ingreso al complejo',
+        familiar: 'Familiar',
+        contratista: 'Contratista',
+        empleado: 'Empleado',
+        otro: 'Otro',
+        visitorCategory: 'Categoría de Visitante',
+        awaitingApproval: 'Esperando Aprobación del Residente',
+        manualEntryPending: 'Su ingreso ha sido registrado y está a la espera de la aprobación del residente.',
+        approve: 'Aprobar Acceso',
+        deny: 'Denegar Acceso',
+        visitApproved: 'Visita aprobada exitosamente',
+        visitDenied: 'Visita denegada',
     }
 };
 

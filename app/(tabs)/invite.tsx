@@ -32,6 +32,7 @@ export default function InviteScreen() {
     const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
     const [isVip, setIsVip] = useState(false);
     const [isSingleEntry, setIsSingleEntry] = useState(false);
+    const [category, setCategory] = useState<string>('FAMILIAR');
 
     React.useEffect(() => {
         if (step === 1) {
@@ -126,6 +127,7 @@ export default function InviteScreen() {
                 images: image ? JSON.stringify([image]) : undefined,
                 isVip: isVip,
                 singleEntry: isSingleEntry,
+                category,
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -374,25 +376,56 @@ export default function InviteScreen() {
                     </TouchableOpacity>
 
                     {!isVip && (
-                        <TouchableOpacity
-                            style={styles.vipCheckboxContainer}
-                            onPress={() => setIsSingleEntry(!isSingleEntry)}
-                            activeOpacity={0.7}
-                        >
-                            <BlurView intensity={20} tint="dark" style={[styles.vipCheckboxBlur, { borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
-                                <View style={[styles.checkbox, isSingleEntry && { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]}>
-                                    {isSingleEntry && <Ionicons name="checkmark" size={16} color="#ffffff" />}
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.vipLabel}>{t('singleEntryPass')}</Text>
-                                    <Text style={[styles.vipSubtext, { color: '#94a3b8' }]}>{t('singleEntryPassSubtext')}</Text>
-                                </View>
-                            </BlurView>
-                        </TouchableOpacity>
-                    )}
-
-                    {!isVip && (
                         <>
+                            <Text style={styles.label}>{t('visitorCategory')}</Text>
+                            <View style={styles.categorySelector}>
+                                {[
+                                    { id: 'FAMILIAR', label: t('familiar'), icon: 'people' },
+                                    { id: 'CONTRATISTA', label: t('contratista'), icon: 'construct' },
+                                    { id: 'EMPLEADO', label: t('empleado'), icon: 'briefcase' },
+                                    { id: 'OTRO', label: t('otro'), icon: 'ellipsis-horizontal' },
+                                ].map((cat) => (
+                                    <TouchableOpacity
+                                        key={cat.id}
+                                        style={[
+                                            styles.categoryOption,
+                                            category === cat.id && styles.categoryOptionActive
+                                        ]}
+                                        onPress={() => setCategory(cat.id)}
+                                    >
+                                        <BlurView intensity={category === cat.id ? 50 : 20} tint="dark" style={styles.categoryBlur}>
+                                            <Ionicons
+                                                name={cat.icon as any}
+                                                size={18}
+                                                color={category === cat.id ? '#ffffff' : '#94a3b8'}
+                                            />
+                                            <Text style={[
+                                                styles.categoryText,
+                                                category === cat.id && styles.categoryTextActive
+                                            ]}>
+                                                {cat.label}
+                                            </Text>
+                                        </BlurView>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.vipCheckboxContainer}
+                                onPress={() => setIsSingleEntry(!isSingleEntry)}
+                                activeOpacity={0.7}
+                            >
+                                <BlurView intensity={20} tint="dark" style={[styles.vipCheckboxBlur, { borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
+                                    <View style={[styles.checkbox, isSingleEntry && { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]}>
+                                        {isSingleEntry && <Ionicons name="checkmark" size={16} color="#ffffff" />}
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.vipLabel}>{t('singleEntryPass')}</Text>
+                                        <Text style={[styles.vipSubtext, { color: '#94a3b8' }]}>{t('singleEntryPassSubtext')}</Text>
+                                    </View>
+                                </BlurView>
+                            </TouchableOpacity>
+
                             <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
                             <ScrollView
                                 horizontal
@@ -629,6 +662,51 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 24,
         elevation: 12,
+    },
+    removePhoto: {
+        marginTop: 8,
+        alignItems: 'center',
+    },
+    // Category Selector
+    categorySelector: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 4,
+        marginBottom: 16,
+    },
+    categoryOption: {
+        flex: 1,
+        minWidth: '45%',
+        height: 50,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    categoryOptionActive: {
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+    },
+    categoryBlur: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+    },
+    categoryText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#94a3b8',
+    },
+    categoryTextActive: {
+        color: '#ffffff',
+    },
+    removePhotoText: {
+        color: '#ef4444',
+        fontSize: 14,
     },
     accessCodeContainer: {
         marginTop: 24,

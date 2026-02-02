@@ -145,7 +145,9 @@ export default function VisitorsScreen() {
                                         </View>
                                         <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(visitor.status)}20`, borderColor: `${getStatusColor(visitor.status)}40` }]}>
                                             <Text style={[styles.statusText, { color: getStatusColor(visitor.status) }]}>
-                                                {t(visitor.status?.toLowerCase())}
+                                                {visitor.status === 'PENDING' && visitor.manualEntry
+                                                    ? t('awaitingApproval')
+                                                    : t(visitor.status?.toLowerCase())}
                                             </Text>
                                         </View>
                                     </View>
