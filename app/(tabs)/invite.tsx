@@ -31,6 +31,7 @@ export default function InviteScreen() {
     const [assignedSpaces, setAssignedSpaces] = useState<any[]>([]);
     const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
     const [isVip, setIsVip] = useState(false);
+    const [isSingleEntry, setIsSingleEntry] = useState(false);
 
     React.useEffect(() => {
         if (step === 1) {
@@ -124,6 +125,7 @@ export default function InviteScreen() {
                 spaceId: selectedSpaceId || undefined,
                 images: image ? JSON.stringify([image]) : undefined,
                 isVip: isVip,
+                singleEntry: isSingleEntry,
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -348,7 +350,16 @@ export default function InviteScreen() {
 
                     <TouchableOpacity
                         style={styles.vipCheckboxContainer}
-                        onPress={() => setIsVip(!isVip)}
+                        onPress={() => {
+                            const newVip = !isVip;
+                            setIsVip(newVip);
+                            if (newVip) {
+                                setDuration('876000'); // Indefinite
+                                setIsSingleEntry(false);
+                            } else {
+                                setDuration('4'); // Default back to 4h
+                            }
+                        }}
                         activeOpacity={0.7}
                     >
                         <BlurView intensity={20} tint="dark" style={styles.vipCheckboxBlur}>
@@ -362,42 +373,64 @@ export default function InviteScreen() {
                         </BlurView>
                     </TouchableOpacity>
 
-                    <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.durationSelector}
-                    >
-                        {[
-                            { value: '2', label: `2${t('hoursAbbr')}` },
-                            { value: '4', label: `4${t('hoursAbbr')}` },
-                            { value: '8', label: `8${t('hoursAbbr')}` },
-                            { value: '24', label: `24${t('hoursAbbr')}` },
-                            { value: '720', label: t('oneMonth') },
-                            { value: '2160', label: t('threeMonths') },
-                            { value: '876000', label: t('indefinite') },
-                        ].map((opt) => (
-                            <TouchableOpacity
-                                key={opt.value}
-                                style={[styles.durationOption, duration === opt.value && styles.durationOptionActive]}
-                                onPress={() => setDuration(opt.value)}
-                                activeOpacity={0.7}
+                    {!isVip && (
+                        <TouchableOpacity
+                            style={styles.vipCheckboxContainer}
+                            onPress={() => setIsSingleEntry(!isSingleEntry)}
+                            activeOpacity={0.7}
+                        >
+                            <BlurView intensity={20} tint="dark" style={[styles.vipCheckboxBlur, { borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
+                                <View style={[styles.checkbox, isSingleEntry && { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]}>
+                                    {isSingleEntry && <Ionicons name="checkmark" size={16} color="#ffffff" />}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.vipLabel}>{t('singleEntryPass')}</Text>
+                                    <Text style={[styles.vipSubtext, { color: '#94a3b8' }]}>{t('singleEntryPassSubtext')}</Text>
+                                </View>
+                            </BlurView>
+                        </TouchableOpacity>
+                    )}
+
+                    {!isVip && (
+                        <>
+                            <Text style={styles.sectionTitleSmall}>{t('durationHours')}</Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.durationSelector}
                             >
-                                <BlurView intensity={duration === opt.value ? 50 : 20} tint="dark" style={styles.durationBlur}>
-                                    <Text
-                                        style={[
-                                            styles.durationText,
-                                            duration === opt.value && styles.durationTextActive,
-                                            opt.label.length > 4 && { fontSize: 13 }
-                                        ]}
-                                        numberOfLines={1}
+                                {[
+                                    { value: '2', label: `2${t('hoursAbbr')}` },
+                                    { value: '4', label: `4${t('hoursAbbr')}` },
+                                    { value: '8', label: `8${t('hoursAbbr')}` },
+                                    { value: '24', label: `24${t('hoursAbbr')}` },
+                                    { value: '720', label: t('oneMonth') },
+                                    { value: '2160', label: t('threeMonths') },
+                                    { value: '876000', label: t('indefinite') },
+                                ].map((opt) => (
+                                    <TouchableOpacity
+                                        key={opt.value}
+                                        style={[styles.durationOption, duration === opt.value && styles.durationOptionActive]}
+                                        onPress={() => setDuration(opt.value)}
+                                        activeOpacity={0.7}
                                     >
-                                        {opt.label}
-                                    </Text>
-                                </BlurView>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                        <BlurView intensity={duration === opt.value ? 50 : 20} tint="dark" style={styles.durationBlur}>
+                                            <Text
+                                                style={[
+                                                    styles.durationText,
+                                                    duration === opt.value && styles.durationTextActive,
+                                                    opt.label.length > 4 && { fontSize: 13 }
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {opt.label}
+                                            </Text>
+                                        </BlurView>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </>
+                    )}
 
                     <Button
                         title={t('generatePass')}
@@ -408,7 +441,7 @@ export default function InviteScreen() {
                     />
                 </ScrollView>
             </LinearGradient>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     );
 }
 

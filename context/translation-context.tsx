@@ -177,6 +177,8 @@ const translations: Record<Language, Record<string, string>> = {
         noVehicleInspection: 'NO VEHICLE INSPECTION',
         securityNotified: 'Security has been notified',
         failedAlert: 'Failed to send alert',
+        singleEntryPass: 'Single Entry Pass',
+        singleEntryPassSubtext: 'Will only allow one entry to the complex',
     },
     es: {
         // Tabs
@@ -345,6 +347,8 @@ const translations: Record<Language, Record<string, string>> = {
         noVehicleInspection: 'NO REVISAR VEHÍCULO',
         securityNotified: 'Seguridad ha sido notificada',
         failedAlert: 'Error al enviar alerta',
+        singleEntryPass: 'Pase de una sola entrada',
+        singleEntryPassSubtext: 'Solo permitirá un ingreso al complejo',
     }
 };
 
