@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 24,
-        paddingBottom: 100,
+        paddingBottom: 160,
     },
     tabContent: {
         flex: 1,
@@ -416,6 +416,7 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 20,
         minHeight: 64,
+        marginBottom: 40,
     },
     submitText: {
         fontSize: 18,

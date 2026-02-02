@@ -140,21 +140,23 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                         </View>
 
                         {/* QR Code Section (if available) */}
-                        {visit.qrCode && visit.status !== 'EXPIRED' && (
+                        {(visit.qrCode || visit.accessCode) && visit.status !== 'EXPIRED' && (
                             <View style={styles.qrSection}>
                                 <View style={styles.qrContainer}>
                                     <QRCode
-                                        value={visit.qrCode}
+                                        value={visit.qrCode || visit.accessCode || 'INVALID'}
                                         size={180}
                                         color="#000000"
                                         backgroundColor="#ffffff"
                                         quietZone={10}
                                     />
                                 </View>
-                                <View style={styles.accessCodeContainer}>
-                                    <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
-                                    <Text style={styles.accessCodeValue}>{visit.accessCode}</Text>
-                                </View>
+                                {visit.accessCode && (
+                                    <View style={styles.accessCodeContainer}>
+                                        <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
+                                        <Text style={styles.accessCodeValue}>{visit.accessCode}</Text>
+                                    </View>
+                                )}
                             </View>
                         )}
 
