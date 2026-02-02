@@ -131,6 +131,18 @@ const translations: Record<Language, Record<string, string>> = {
         typeSecurity: 'Security',
         typeSupport: 'Support',
         typeOther: 'Other',
+        reportHistory: 'Report History',
+        noReportsFound: 'No reports found',
+        viewDiscussion: 'View Discussion',
+        addCommentPlaceholder: 'Add a message...',
+        commentedOn: 'commented on',
+        incidentDetails: 'Incident Details',
+        status: 'Status',
+        reporter: 'Reporter',
+        discussion: 'Discussion',
+        noComments: 'No comments yet',
+        type: 'Type',
+
 
         // Parking
         parkingStatus: 'Parking Status',
@@ -301,6 +313,18 @@ const translations: Record<Language, Record<string, string>> = {
         typeSecurity: 'Seguridad',
         typeSupport: 'Soporte',
         typeOther: 'Otro',
+        reportHistory: 'Historial de Reportes',
+        noReportsFound: 'No se encontraron reportes',
+        viewDiscussion: 'Ver Discusión',
+        addCommentPlaceholder: 'Añadir un mensaje...',
+        commentedOn: 'comentó el',
+        incidentDetails: 'Detalles del Incidente',
+        status: 'Estado',
+        reporter: 'Reportado por',
+        discussion: 'Discusión',
+        noComments: 'Sin comentarios aún',
+        type: 'Tipo',
+
 
         // Parking
         parkingStatus: 'Estado del Parqueo',
