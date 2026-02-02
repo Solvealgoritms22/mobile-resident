@@ -1,19 +1,19 @@
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, RefreshControl, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { IncidentDetailModal } from '@/components/IncidentDetailModal';
+import { useToast } from '@/components/ui/Toast';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/context/translation-context';
-import { IncidentDetailModal } from '@/components/IncidentDetailModal';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ReportIncidentScreen() {
     const { t } = useTranslation();
-    const { token } = useAuth();
+    const { token, socket } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
@@ -54,6 +54,24 @@ export default function ReportIncidentScreen() {
             fetchHistory();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleRefresh = () => {
+            if (activeTab === 'history') {
+                fetchHistory();
+            }
+        };
+
+        socket.on('incidentCreated', handleRefresh);
+        socket.on('incidentStatusUpdated', handleRefresh);
+
+        return () => {
+            socket.off('incidentCreated', handleRefresh);
+            socket.off('incidentStatusUpdated', handleRefresh);
+        };
+    }, [socket, activeTab]);
 
     const handleSubmit = async () => {
         if (!incidentType || !description) {
@@ -324,7 +342,7 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 24,
-        paddingBottom: 40,
+        paddingBottom: 100,
     },
     tabContent: {
         flex: 1,

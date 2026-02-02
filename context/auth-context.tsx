@@ -29,6 +29,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
+    socket: any | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (partialUser: Partial<User>) => Promise<void>;
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [socket, setSocket] = useState<any>(null);
     const router = useRouter();
     const segments = useSegments();
 
@@ -84,14 +86,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user, segments, isLoading]);
 
-    // Global Emergency Listener
+    // Global Socket & Emergency Listener
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            if (socket) {
+                socket.disconnect();
+                setSocket(null);
+            }
+            return;
+        }
 
-        const socket = io(API_URL.replace('/api', ''));
+        const newSocket = io(API_URL.replace('/api', ''));
+        setSocket(newSocket);
 
-
-        socket.on('statusUpdate', (data: any) => {
+        newSocket.on('statusUpdate', (data: any) => {
             console.log('Status update received:', data);
             if (data.type === 'USER_UPDATED' && data.user && data.user.id === user.id) {
                 console.log('Current user updated! Refreshing session...');
@@ -100,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             refreshData();
         });
 
-        socket.on('visitUpdate', (visit: any) => {
+        newSocket.on('visitUpdate', (visit: any) => {
             console.log('Visit Update Received:', visit);
             refreshData();
             if (visit.hostId === user.id) {
@@ -116,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         });
 
-        socket.on('emergencyAlert', (alert: any) => {
+        newSocket.on('emergencyAlert', (alert: any) => {
             console.log('Emergency Alert Received:', alert);
 
             // Filter: Only show alerts from Security/Admin authorities to Residents
@@ -150,7 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         return () => {
-            socket.disconnect();
+            newSocket.disconnect();
+            setSocket(null);
             if (notificationListener) notificationListener.remove();
             if (responseListener) responseListener.remove();
         };
@@ -294,7 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData }}>
+        <AuthContext.Provider value={{ user, token, isLoading, socket, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData }}>
             {children}
         </AuthContext.Provider>
     );
