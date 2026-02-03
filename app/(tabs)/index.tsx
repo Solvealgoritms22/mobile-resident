@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   actionButton: {
     width: '31%',
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   actionBlur: {
@@ -524,10 +524,12 @@ const styles = StyleSheet.create({
   actionIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 17,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   actionLabel: {
     fontSize: 10,
