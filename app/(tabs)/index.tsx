@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   actionIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 15,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
