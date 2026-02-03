@@ -1,16 +1,16 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator, Switch } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
-import { API_URL } from '@/constants/api';
 import { useToast } from '@/components/ui/Toast';
-import { useTranslation, Language } from '@/context/translation-context';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/context/auth-context';
+import { useTranslation } from '@/context/translation-context';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?background=3b82f6&color=fff&size=128&name=';
 
@@ -21,6 +21,15 @@ export default function ProfileScreen() {
     const router = useRouter();
     const [uploading, setUploading] = useState(false);
     const [updatingPrefs, setUpdatingPrefs] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    const getInitials = (name: string) => {
+        return name?.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2) || 'R';
+    };
 
     const handleLogout = () => {
         if (Platform.OS === 'web') {
@@ -128,9 +137,11 @@ export default function ProfileScreen() {
     if (!user) return null;
 
     const getProfileImage = () => {
-        if (!user.profileImage) return `${DEFAULT_AVATAR}${encodeURIComponent(user.name)}`;
+        if (!user.profileImage) return null;
         if (user.profileImage.startsWith('http')) return user.profileImage;
-        return `${API_URL}${user.profileImage}`;
+        const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        const path = user.profileImage.startsWith('/') ? user.profileImage : `/${user.profileImage}`;
+        return `${baseUrl}${path}`;
     };
 
     return (
@@ -140,13 +151,19 @@ export default function ProfileScreen() {
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleImagePick} disabled={uploading} style={styles.avatarContainer}>
                         <BlurView intensity={80} tint="dark" style={styles.avatarBlur}>
-                            <Image
-                                source={{ uri: getProfileImage() }}
-                                style={styles.avatarImage}
-                                contentFit="cover"
-                                transition={500}
-                                placeholderContentFit="cover"
-                            />
+                            {(user.profileImage && !imageError) ? (
+                                <Image
+                                    source={{ uri: getProfileImage() || undefined }}
+                                    style={styles.avatarImage}
+                                    contentFit="cover"
+                                    transition={500}
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <View style={styles.avatarFallback}>
+                                    <Text style={styles.avatarFallbackText}>{getInitials(user.name)}</Text>
+                                </View>
+                            )}
                             {uploading && (
                                 <View style={styles.uploadingOverlay}>
                                     <ActivityIndicator color="#ffffff" />
@@ -306,7 +323,19 @@ const styles = StyleSheet.create({
         width: 110,
         height: 110,
         borderRadius: 55,
-        resizeMode: 'cover',
+    },
+    avatarFallback: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarFallbackText: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#3b82f6',
     },
     avatarInner: {
         width: 94,
