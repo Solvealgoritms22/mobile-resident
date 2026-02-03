@@ -89,6 +89,7 @@ export default function ProfileScreen() {
 
     const uploadImage = async (uri: string) => {
         setUploading(true);
+        setImageError(false);
         try {
             const formData = new FormData();
             const filename = uri.split('/').pop() || 'profile.jpg';
