@@ -74,9 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
 
             // Automatically unload sound after 10 seconds to avoid memory leaks
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
                 sound.unloadAsync();
             }, 10000);
+
+            // We could return this to a caller if we needed to clear it early
+            return timeout;
         } catch (error) {
             console.error('Failed to play emergency sound:', error);
         }
@@ -192,14 +195,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Data Refresh Mechanism
     const refreshCallbacks = React.useRef<(() => void)[]>([]);
 
-    const onDataRefresh = (callback: () => void) => {
+    const onDataRefresh = React.useCallback((callback: () => void) => {
         refreshCallbacks.current.push(callback);
         return () => {
             refreshCallbacks.current = refreshCallbacks.current.filter(cb => cb !== callback);
         };
-    };
+    }, []);
 
-    const refreshData = () => {
+    const refreshData = React.useCallback(() => {
         console.log('Triggering global data refresh...');
         refreshCallbacks.current.forEach(cb => {
             try {
@@ -208,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.error('Error in refresh callback:', e);
             }
         });
-    };
+    }, []);
 
     async function registerForPushNotificationsAsync() {
         let token;
@@ -262,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const login = async (email: string, password: string) => {
+    const login = React.useCallback(async (email: string, password: string) => {
         try {
             const response = await axios.post(`${API_URL}/auth/login`, {
                 email,
@@ -290,9 +293,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             throw error;
         }
-    };
+    }, [router]);
 
-    const logout = async () => {
+    const logout = React.useCallback(async () => {
         try {
             await AsyncStorage.removeItem('authToken');
             await AsyncStorage.removeItem('user');
@@ -307,16 +310,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error('Logout failed:', error);
         }
-    };
+    }, [router]);
 
-    const updateUser = async (partialUser: Partial<User>) => {
-        if (!user) return;
-        const updatedUser = { ...user, ...partialUser };
-        setUser(updatedUser);
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-    };
+    const updateUser = React.useCallback(async (partialUser: Partial<User>) => {
+        setUser(prev => {
+            if (!prev) return null;
+            const updated = { ...prev, ...partialUser };
+            AsyncStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+        });
+    }, []);
 
-    const updatePushToken = async (pushToken: string) => {
+    const updatePushToken = React.useCallback(async (pushToken: string) => {
         if (!user || user.pushToken === pushToken) return;
         try {
             await axios.patch(`${API_URL}/users/${user.id}/push-settings`, { pushToken });
@@ -324,10 +329,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error('Failed to update push token on backend:', error);
         }
-    };
+    }, [user, updateUser]);
+
+    const value = React.useMemo(() => ({
+        user,
+        token,
+        isLoading,
+        socket,
+        login,
+        logout,
+        updateUser,
+        updatePushToken,
+        onDataRefresh,
+        refreshData
+    }), [user, token, isLoading, socket, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData]);
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, socket, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

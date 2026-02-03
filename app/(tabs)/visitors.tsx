@@ -1,45 +1,55 @@
 import { Skeleton } from '@/components/ui/Skeleton';
 import { VisitDetailModal } from '@/components/VisitDetailModal';
-import { API_URL } from '@/constants/api';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import { visitService } from '@/services/visitService';
+import { getStatusConfig } from '@/utils/status';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Alert, Platform, RefreshControl, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 
 export default function VisitorsScreen() {
     const { user, token } = useAuth();
     const { t } = useTranslation();
     const router = useRouter();
-    const [visitors, setVisitors] = useState([]);
+    const [visitors, setVisitors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedVisit, setSelectedVisit] = useState<any>(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    const fetchVisitors = async () => {
+    const fetchVisitors = async (pageNum = 1, shouldRefresh = false) => {
         if (!user) return;
+        if (!shouldRefresh && pageNum > 1 && !hasMore) return;
+
+        if (pageNum === 1 && !shouldRefresh) setLoading(true);
+        else if (!shouldRefresh) setLoadingMore(true);
+
         try {
-            let url = `${API_URL}/visits/my-visits/${user.id}`;
-            if (startDate && endDate) {
-                url += `?startDate=${startDate}&endDate=${endDate}`;
+            const response = await visitService.getMyVisits(user.id, pageNum, 10, startDate, endDate);
+
+            if (shouldRefresh || pageNum === 1) {
+                setVisitors(response.data);
+            } else {
+                setVisitors(prev => [...prev, ...response.data]);
             }
-            const response = await axios.get(url, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            setVisitors(response.data);
+
+            setHasMore(pageNum < response.meta.totalPages);
+            setPage(pageNum);
         } catch (err) {
             console.error('Error fetching visitors:', err);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
+            setRefreshing(false);
         }
     };
 
@@ -60,21 +70,19 @@ export default function VisitorsScreen() {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await fetchVisitors();
-        setRefreshing(false);
+        await fetchVisitors(1, true);
+    };
+
+    const handleLoadMore = () => {
+        if (!loadingMore && hasMore) {
+            fetchVisitors(page + 1);
+        }
     };
 
     const handleShare = () => {
         Alert.alert('Shared', 'Invitation link shared to WhatsApp');
     };
 
-    const getStatusColor = (status: string) => {
-        const s = status?.toUpperCase();
-        if (s === 'CHECKED_IN' || s === 'APPROVED') return '#10b981';
-        if (s === 'CHECKED_OUT') return '#3b82f6';
-        if (s === 'PENDING') return '#f59e0b';
-        return '#ef4444';
-    };
 
     return (
         <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
@@ -110,88 +118,93 @@ export default function VisitorsScreen() {
                             onChangeText={setEndDate}
                         />
                     </View>
-                    <TouchableOpacity style={styles.filterButton} onPress={fetchVisitors}>
+                    <TouchableOpacity style={styles.filterButton} onPress={() => fetchVisitors(1, true)}>
                         <Ionicons name="filter" size={20} color="#ffffff" />
                     </TouchableOpacity>
                 </View>
             </BlurView>
 
-            <ScrollView
+            <FlatList
+                data={visitors}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
                 }
-            >
-                {loading ? (
-                    <View style={{ gap: 16 }}>
-                        <Skeleton height={120} borderRadius={20} />
-                        <Skeleton height={120} borderRadius={20} />
-                        <Skeleton height={120} borderRadius={20} />
-                        <Skeleton height={120} borderRadius={20} />
-                    </View>
-                ) : visitors.length > 0 ? (
-                    visitors.map((visitor: any) => (
-                        <BlurView key={visitor.id} intensity={40} tint="dark" style={styles.visitorCard}>
-                            <View style={styles.cardHeader}>
-                                <View style={[styles.iconContainer, { backgroundColor: `${getStatusColor(visitor.status)}20` }]}>
-                                    <Ionicons name="person" size={24} color={getStatusColor(visitor.status)} />
-                                </View>
-                                <View style={styles.cardInfo}>
-                                    <View style={styles.nameRow}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                            <Text style={styles.visitorName}>{visitor.visitorName}</Text>
-                                            {visitor.isVip && <Ionicons name="star" size={14} color="#f59e0b" />}
-                                        </View>
-                                        <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(visitor.status)}20`, borderColor: `${getStatusColor(visitor.status)}40` }]}>
-                                            <Text style={[styles.statusText, { color: getStatusColor(visitor.status) }]}>
-                                                {visitor.status === 'PENDING' && visitor.manualEntry
-                                                    ? t('awaitingApproval')
-                                                    : t(visitor.status?.toLowerCase())}
-                                            </Text>
-                                        </View>
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
+                ListHeaderComponent={null}
+                ListFooterComponent={
+                    loadingMore ? (
+                        <View style={{ paddingVertical: 20 }}>
+                            <ActivityIndicator color="#3b82f6" />
+                        </View>
+                    ) : null
+                }
+                ListEmptyComponent={
+                    !loading ? (
+                        <View style={styles.emptyState}>
+                            <BlurView intensity={40} tint="dark" style={styles.emptyBlur}>
+                                <Ionicons name="people-outline" size={64} color="#64748b" />
+                                <Text style={styles.emptyTitle}>{t('noVisitorsFound')}</Text>
+                                <Text style={styles.emptyText}>{t('adjustFilterHint')}</Text>
+                            </BlurView>
+                        </View>
+                    ) : null
+                }
+                renderItem={({ item: visitor }) => (
+                    <BlurView key={visitor.id} intensity={40} tint="dark" style={styles.visitorCard}>
+                        <View style={styles.cardHeader}>
+                            <View style={[styles.iconContainer, { backgroundColor: `${getStatusConfig(visitor.status).color}20` }]}>
+                                <Ionicons name="person" size={24} color={getStatusConfig(visitor.status).color} />
+                            </View>
+                            <View style={styles.cardInfo}>
+                                <View style={styles.nameRow}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Text style={styles.visitorName}>{visitor.visitorName}</Text>
+                                        {visitor.isVip && <Ionicons name="star" size={14} color="#f59e0b" />}
                                     </View>
-                                    <Text style={styles.visitorMeta}>
-                                        {visitor.licensePlate || t('noVehicle')} • {new Date(visitor.createdAt).toLocaleDateString()}
-                                    </Text>
+                                    <View style={[styles.statusBadge, { backgroundColor: `${getStatusConfig(visitor.status).color}20`, borderColor: `${getStatusConfig(visitor.status).color}40` }]}>
+                                        <Text style={[styles.statusText, { color: getStatusConfig(visitor.status).color }]}>
+                                            {visitor.status === 'PENDING' && visitor.manualEntry
+                                                ? t('awaitingApproval')
+                                                : t(visitor.status?.toLowerCase())}
+                                        </Text>
+                                    </View>
                                 </View>
+                                <Text style={styles.visitorMeta}>
+                                    {visitor.licensePlate || t('noVehicle')} • {new Date(visitor.createdAt).toLocaleDateString()}
+                                </Text>
                             </View>
-                            <View style={styles.cardFooter}>
-                                <View style={styles.timeInfo}>
-                                    <Ionicons name="time-outline" size={14} color="#94a3b8" />
-                                    <Text style={styles.timeText}>
-                                        {new Date(visitor.validFrom).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {
-                                            new Date(visitor.validUntil).getFullYear() > 2100
-                                                ? t('indefinite')
-                                                : new Date(visitor.validUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                        }
-                                    </Text>
-                                </View>
-                                {(visitor.status === 'PENDING' || visitor.status === 'APPROVED') && (
-                                    <TouchableOpacity
-                                        style={styles.viewPassButton}
-                                        onPress={() => {
-                                            setSelectedVisit(visitor);
-                                            setModalVisible(true);
-                                        }}
-                                    >
-                                        <Text style={styles.viewPassText}>{t('viewPass')}</Text>
-                                        <Ionicons name="qr-code-outline" size={16} color="#3b82f6" />
-                                    </TouchableOpacity>
-                                )}
+                        </View>
+                        <View style={styles.cardFooter}>
+                            <View style={styles.timeInfo}>
+                                <Ionicons name="time-outline" size={14} color="#94a3b8" />
+                                <Text style={styles.timeText}>
+                                    {new Date(visitor.validFrom).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {
+                                        new Date(visitor.validUntil).getFullYear() > 2100
+                                            ? t('indefinite')
+                                            : new Date(visitor.validUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    }
+                                </Text>
                             </View>
-                        </BlurView>
-                    ))
-                ) : (
-                    <View style={styles.emptyState}>
-                        <BlurView intensity={40} tint="dark" style={styles.emptyBlur}>
-                            <Ionicons name="people-outline" size={64} color="#64748b" />
-                            <Text style={styles.emptyTitle}>{t('noVisitorsFound')}</Text>
-                            <Text style={styles.emptyText}>{t('adjustFilterHint')}</Text>
-                        </BlurView>
-                    </View>
+                            {(visitor.status === 'PENDING' || visitor.status === 'APPROVED') && (
+                                <TouchableOpacity
+                                    style={styles.viewPassButton}
+                                    onPress={() => {
+                                        setSelectedVisit(visitor);
+                                        setModalVisible(true);
+                                    }}
+                                >
+                                    <Text style={styles.viewPassText}>{t('viewPass')}</Text>
+                                    <Ionicons name="qr-code-outline" size={16} color="#3b82f6" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </BlurView>
                 )}
-            </ScrollView>
+            />
 
             <VisitDetailModal
                 visible={modalVisible}

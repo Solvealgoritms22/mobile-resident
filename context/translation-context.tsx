@@ -421,23 +421,29 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const setLanguage = async (lang: Language) => {
+    const setLanguage = React.useCallback(async (lang: Language) => {
         try {
             await AsyncStorage.setItem('cosevi_app_lang', lang);
             setLanguageState(lang);
         } catch (error) {
             console.error('Error saving language:', error);
         }
-    };
+    }, []);
 
-    const t = (key: string): string => {
+    const t = React.useCallback((key: string): string => {
         return translations[language][key] || key;
-    };
+    }, [language]);
+
+    const value = React.useMemo(() => ({
+        language,
+        setLanguage,
+        t
+    }), [language, setLanguage, t]);
 
     if (!isInitialized) return null;
 
     return (
-        <TranslationContext.Provider value={{ language, setLanguage, t }}>
+        <TranslationContext.Provider value={value}>
             {children}
         </TranslationContext.Provider>
     );
