@@ -57,6 +57,7 @@ const translations: Record<Language, Record<string, string>> = {
         activeInvitations: 'Active Invitations',
         noActiveInvites: 'No active invitations',
         getHelp: 'GET HELP',
+        exit: 'Exit',
 
         // Invitations
         newInvitation: 'New Invitation',
@@ -250,6 +251,7 @@ const translations: Record<Language, Record<string, string>> = {
         activeInvitations: 'Invitaciones Activas',
         noActiveInvites: 'No hay invitaciones activas',
         getHelp: 'OBTENER AYUDA',
+        exit: 'Salida',
 
         // Invitations
         newInvitation: 'Nueva Invitación',
