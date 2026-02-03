@@ -23,12 +23,18 @@ export default function ProfileScreen() {
     const [updatingPrefs, setUpdatingPrefs] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    const getInitials = (name: string) => {
-        return name?.split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2) || 'R';
+    const getInitials = (name?: string) => {
+        if (!name) return 'R';
+        try {
+            return name.split(' ')
+                .filter(part => part.length > 0)
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2) || 'R';
+        } catch (e) {
+            return 'R';
+        }
     };
 
     const handleLogout = () => {
