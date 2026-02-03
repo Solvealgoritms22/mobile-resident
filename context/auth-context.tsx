@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 Alert.alert(
-                    '⚠️ SECURITY ALERT ⚠️',
+                    'SECURITY ALERT ⚠️',
                     `${alert.type?.toUpperCase()?.replace('_', ' ')}\n${alert.location ? `Location: ${alert.location}` : ''}\nDetailed instructions will follow.`,
                     [{ text: 'I UNDERSTAND', style: 'cancel' }],
                     { cancelable: false }
