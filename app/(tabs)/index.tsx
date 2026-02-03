@@ -265,7 +265,7 @@ export default function DashboardScreen() {
               );
             }}
           >
-            <BlurView intensity={60} tint="dark" style={[styles.actionBlur, { borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
+            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
               <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
                 <Ionicons name="warning" size={24} color="#ef4444" />
               </View>
@@ -511,14 +511,14 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   actionBlur: {
     flex: 1,
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   actionIconContainer: {
