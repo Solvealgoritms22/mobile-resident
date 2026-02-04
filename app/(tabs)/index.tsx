@@ -102,7 +102,7 @@ export default function DashboardScreen() {
             {(user?.profileImage && !imageError) ? (
               <View style={styles.headerAvatarContainer}>
                 <Image
-                  source={{ uri: getImageUrl(user.profileImage, true) || undefined }}
+                  source={{ uri: getImageUrl(user.profileImage, false) || undefined }}
                   style={styles.headerAvatar}
                   contentFit="cover"
                   transition={500}

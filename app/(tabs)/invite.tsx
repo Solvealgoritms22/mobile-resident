@@ -3,6 +3,7 @@ import { useToast } from '@/components/ui/Toast';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import { visitService } from '@/services/visitService';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { BlurView } from 'expo-blur';
@@ -115,10 +116,10 @@ export default function InviteScreen() {
             const validFrom = new Date();
             const validUntil = new Date(Date.now() + parseInt(duration) * 60 * 60 * 1000);
 
-            const response = await axios.post(`${API_URL}/visits`, {
+            const visitData = {
                 hostId: user?.id,
                 visitorName,
-                visitorIdNumber: visitorId,
+                visitorIdNumber: visitorId || 'N/A',
                 licensePlate: plate || undefined,
                 validFrom: validFrom.toISOString(),
                 validUntil: validUntil.toISOString(),
@@ -128,17 +129,16 @@ export default function InviteScreen() {
                 isVip: isVip,
                 singleEntry: isSingleEntry,
                 category,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            };
 
-            setQrCode(response.data.qrCode);
-            setAccessCode(response.data.accessCode);
+            const data = await visitService.createVisit(visitData);
+
+            setQrCode(data.qrCode);
+            setAccessCode(data.accessCode);
             showToast(t('visitCreated'), 'success');
             setStep(2);
         } catch (error: any) {
+            console.error('Visit Creation Error:', error);
             showToast(error.response?.data?.message || t('failedCreateVisit'), 'error');
         } finally {
             setLoading(false);

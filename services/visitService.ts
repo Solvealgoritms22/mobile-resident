@@ -28,7 +28,7 @@ export const visitService = {
     },
 
     createVisit: async (data: any) => {
-        const response = await api.post('/visits', data);
+        const response = await api.post('/visits/create', data);
         return response.data;
     }
 };
