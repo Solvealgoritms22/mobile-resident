@@ -145,10 +145,14 @@ export default function ProfileScreen() {
 
     const getProfileImage = () => {
         if (!user.profileImage) return null;
-        if (user.profileImage.startsWith('http')) return user.profileImage;
+        if (user.profileImage.startsWith('http')) {
+            // If it's already a full URL, just append the timestamp
+            const separator = user.profileImage.includes('?') ? '&' : '?';
+            return `${user.profileImage}${separator}t=${Date.now()}`;
+        }
         const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
         const path = user.profileImage.startsWith('/') ? user.profileImage : `/${user.profileImage}`;
-        return `${baseUrl}${path}`;
+        return `${baseUrl}${path}?t=${Date.now()}`;
     };
 
     return (

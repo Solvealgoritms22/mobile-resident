@@ -375,41 +375,41 @@ export default function InviteScreen() {
                         </BlurView>
                     </TouchableOpacity>
 
+                    <Text style={styles.label}>{t('visitorCategory')}</Text>
+                    <View style={styles.categorySelector}>
+                        {[
+                            { id: 'FAMILIAR', label: t('familiar'), icon: 'people' },
+                            { id: 'CONTRATISTA', label: t('contratista'), icon: 'construct' },
+                            { id: 'EMPLEADO', label: t('empleado'), icon: 'briefcase' },
+                            { id: 'OTRO', label: t('otro'), icon: 'ellipsis-horizontal' },
+                        ].map((cat) => (
+                            <TouchableOpacity
+                                key={cat.id}
+                                style={[
+                                    styles.categoryOption,
+                                    category === cat.id && styles.categoryOptionActive
+                                ]}
+                                onPress={() => setCategory(cat.id)}
+                            >
+                                <BlurView intensity={category === cat.id ? 50 : 20} tint="dark" style={styles.categoryBlur}>
+                                    <Ionicons
+                                        name={cat.icon as any}
+                                        size={18}
+                                        color={category === cat.id ? '#ffffff' : '#94a3b8'}
+                                    />
+                                    <Text style={[
+                                        styles.categoryText,
+                                        category === cat.id && styles.categoryTextActive
+                                    ]}>
+                                        {cat.label}
+                                    </Text>
+                                </BlurView>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
                     {!isVip && (
                         <>
-                            <Text style={styles.label}>{t('visitorCategory')}</Text>
-                            <View style={styles.categorySelector}>
-                                {[
-                                    { id: 'FAMILIAR', label: t('familiar'), icon: 'people' },
-                                    { id: 'CONTRATISTA', label: t('contratista'), icon: 'construct' },
-                                    { id: 'EMPLEADO', label: t('empleado'), icon: 'briefcase' },
-                                    { id: 'OTRO', label: t('otro'), icon: 'ellipsis-horizontal' },
-                                ].map((cat) => (
-                                    <TouchableOpacity
-                                        key={cat.id}
-                                        style={[
-                                            styles.categoryOption,
-                                            category === cat.id && styles.categoryOptionActive
-                                        ]}
-                                        onPress={() => setCategory(cat.id)}
-                                    >
-                                        <BlurView intensity={category === cat.id ? 50 : 20} tint="dark" style={styles.categoryBlur}>
-                                            <Ionicons
-                                                name={cat.icon as any}
-                                                size={18}
-                                                color={category === cat.id ? '#ffffff' : '#94a3b8'}
-                                            />
-                                            <Text style={[
-                                                styles.categoryText,
-                                                category === cat.id && styles.categoryTextActive
-                                            ]}>
-                                                {cat.label}
-                                            </Text>
-                                        </BlurView>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
                             <TouchableOpacity
                                 style={styles.vipCheckboxContainer}
                                 onPress={() => setIsSingleEntry(!isSingleEntry)}

@@ -1,6 +1,6 @@
 import { API_URL } from '@/constants/api';
 
-export const getImageUrl = (path?: string) => {
+export const getImageUrl = (path?: string, bustCache = false) => {
     if (!path) return null;
     if (path.startsWith('http') || path.startsWith('data:')) return path;
 
@@ -12,7 +12,11 @@ export const getImageUrl = (path?: string) => {
         normalizedPath = '/' + normalizedPath;
     }
 
-    return `${baseUrl}${normalizedPath}`;
+    let url = `${baseUrl}${normalizedPath}`;
+    if (bustCache) {
+        url += (url.includes('?') ? '&' : '?') + `t=${Date.now()}`;
+    }
+    return url;
 };
 
 export const getInitials = (name?: string) => {

@@ -313,13 +313,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [router]);
 
     const updateUser = React.useCallback(async (partialUser: Partial<User>) => {
-        setUser(prev => {
-            if (!prev) return null;
-            const updated = { ...prev, ...partialUser };
-            AsyncStorage.setItem('user', JSON.stringify(updated));
-            return updated;
-        });
-    }, []);
+        if (!user) return;
+        const updated = { ...user, ...partialUser };
+        setUser(updated);
+        try {
+            await AsyncStorage.setItem('user', JSON.stringify(updated));
+        } catch (error) {
+            console.error('Failed to persist user update:', error);
+        }
+    }, [user]);
 
     const updatePushToken = React.useCallback(async (pushToken: string) => {
         if (!user || user.pushToken === pushToken) return;

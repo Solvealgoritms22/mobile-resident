@@ -1,6 +1,6 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -8,7 +8,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem('cosevi_token');
+        const token = await AsyncStorage.getItem('authToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
