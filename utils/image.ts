@@ -15,11 +15,16 @@ export const getImageUrl = (path?: string) => {
     return `${baseUrl}${normalizedPath}`;
 };
 
-export const getInitials = (name: string) => {
-    return name?.split(' ')
-        .map(n => n[0])
-        .filter(Boolean)
-        .join('')
-        .toUpperCase()
-        .substring(0, 2) || 'U';
+export const getInitials = (name?: string) => {
+    if (!name) return 'R';
+    try {
+        return name.split(' ')
+            .filter(part => part.length > 0)
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2) || 'R';
+    } catch (e) {
+        return 'R';
+    }
 };

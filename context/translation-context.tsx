@@ -203,6 +203,7 @@ const translations: Record<Language, Record<string, string>> = {
         deny: 'Deny Access',
         visitApproved: 'Visit approved successfully',
         visitDenied: 'Visit denied',
+        search: 'Search',
     },
     es: {
         // Tabs
@@ -397,6 +398,7 @@ const translations: Record<Language, Record<string, string>> = {
         deny: 'Denegar Acceso',
         visitApproved: 'Visita aprobada exitosamente',
         visitDenied: 'Visita denegada',
+        search: 'Buscar',
     }
 };
 

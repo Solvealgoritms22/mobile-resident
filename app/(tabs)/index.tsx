@@ -1,6 +1,4 @@
-import { API_URL } from '@/constants/api';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,10 +13,9 @@ import { useToast } from '@/components/ui/Toast';
 import { VisitDetailModal } from '@/components/VisitDetailModal';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import api from '@/services/api';
 import { visitService } from '@/services/visitService';
 import { getImageUrl, getInitials } from '@/utils/image';
-import { getStatusConfig } from '@/utils/status';
-import api from '@/services/api';
 
 export default function DashboardScreen() {
   const { user, token } = useAuth();
@@ -57,37 +54,39 @@ export default function DashboardScreen() {
 
   const { onDataRefresh } = useAuth();
 
-  React.useEffect(() => {
-    const fetchData = React.useCallback(async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const [statsData, visitorsResponse] = await Promise.all([
-          visitService.getStats(),
-          visitService.getMyVisits(user.id, 1, 3)
-        ]);
+  const fetchData = React.useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const [statsData, visitorsResponse] = await Promise.all([
+        visitService.getStats(),
+        visitService.getMyVisits(user.id, 1, 3)
+      ]);
 
-        setStats(statsData);
-        setVisitors(visitorsResponse.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching mobile dashboard data:', err);
-      }
-    }, [user]);
-
-    useEffect(() => {
-      fetchData();
-
-      // Subscribe to global data refresh events
-      const unsubscribe = onDataRefresh(() => {
-        fetchData();
+      setStats({
+        active: statsData.today || 0,
+        pending: statsData.pending || 0,
+        total: (statsData.today || 0) + (statsData.pending || 0)
       });
-
-      return unsubscribe;
-    }, [fetchData, onDataRefresh]);
+      setVisitors(visitorsResponse.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching mobile dashboard data:', err);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchData();
+
+    // Subscribe to global data refresh events
+    const unsubscribe = onDataRefresh(() => {
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [fetchData, onDataRefresh]);
 
   return (
     <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
