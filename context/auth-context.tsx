@@ -24,6 +24,13 @@ interface User {
     profileImage?: string;
     pushNotificationsEnabled?: boolean;
     pushToken?: string;
+    tenantId?: string;
+    plan?: string;
+    branding?: {
+        logo?: string;
+        primaryColor?: string;
+        secondaryColor?: string;
+    };
 }
 
 interface AuthContextType {
@@ -258,13 +265,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const storedToken = await AsyncStorage.getItem('authToken');
             const storedUser = await AsyncStorage.getItem('user');
+            const storedTenantId = await AsyncStorage.getItem('tenantId');
 
             if (storedToken && storedUser) {
                 setToken(storedToken);
                 setUser(JSON.parse(storedUser));
 
-                // Set default Authorization header
+                // Set default headers
                 axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+                if (storedTenantId) {
+                    axios.defaults.headers.common['x-tenant-id'] = storedTenantId;
+                }
             }
         } catch (error) {
             console.error('Failed to restore session:', error);
@@ -280,22 +291,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 password,
             });
 
-            const { access_token, user: userData } = response.data;
+            const { access_token, user: userData, tenant } = response.data;
 
             // Role-based validation for Resident App
             if (userData.role !== 'RESIDENT' && userData.role !== 'ADMIN') {
                 throw { response: { data: { message: 'Access Denied: Resident account required for this app.' } } };
             }
 
+            // Merge tenant info into user object
+            const extendedUser = {
+                ...userData,
+                tenantId: tenant?.id,
+                plan: tenant?.plan || 'starter',
+                branding: tenant?.branding
+            };
+
             // Store token and user data
             await AsyncStorage.setItem('authToken', access_token);
-            await AsyncStorage.setItem('user', JSON.stringify(userData));
+            await AsyncStorage.setItem('user', JSON.stringify(extendedUser));
+            if (tenant?.id) {
+                await AsyncStorage.setItem('tenantId', tenant.id);
+            }
 
             setToken(access_token);
-            setUser(userData);
+            setUser(extendedUser);
 
-            // Set default Authorization header
+            // Set default headers
             axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+            if (tenant?.id) {
+                axios.defaults.headers.common['x-tenant-id'] = tenant.id;
+            }
 
             router.replace('/(tabs)');
         } catch (error) {

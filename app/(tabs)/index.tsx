@@ -13,12 +13,14 @@ import { useToast } from '@/components/ui/Toast';
 import { VisitDetailModal } from '@/components/VisitDetailModal';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import { useBranding } from '@/hooks/useBranding';
 import api from '@/services/api';
 import { visitService } from '@/services/visitService';
 import { getImageUrl, getInitials } from '@/utils/image';
 
 export default function DashboardScreen() {
   const { user, token } = useAuth();
+  const { primary, logo } = useBranding();
   const { showToast } = useToast();
   const { t } = useTranslation();
   const router = useRouter();
@@ -94,8 +96,9 @@ export default function DashboardScreen() {
         {/* Header */}
         <BlurView intensity={80} tint="dark" style={styles.headerCard}>
           <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.role}>{t('residentAccount').split(' ')[0]}</Text>
+            <View style={{ flex: 1 }}>
+              {logo && <Image source={{ uri: logo }} style={{ width: 80, height: 24, marginBottom: 8 }} contentFit="contain" />}
+              <Text style={[styles.role, { color: primary }]}>{t('residentAccount').split(' ')[0]}</Text>
               <Text style={styles.userName}>{user?.name || t('resident')}</Text>
               <Text style={styles.badge}>{user?.email}</Text>
             </View>
@@ -110,8 +113,8 @@ export default function DashboardScreen() {
                 />
               </View>
             ) : (
-              <View style={styles.headerAvatarFallback}>
-                <Text style={styles.avatarText}>{getInitials(user?.name || '')}</Text>
+              <View style={[styles.headerAvatarFallback, { backgroundColor: primary + '20' }]}>
+                <Text style={[styles.avatarText, { color: primary }]}>{getInitials(user?.name || '')}</Text>
               </View>
             )}
           </View>
@@ -212,38 +215,54 @@ export default function DashboardScreen() {
             </BlurView>
           </Pressable>
 
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => {
-              const message = t('emergencyConfirm');
-              if (Platform.OS === 'web') {
-                if (window.confirm(message)) {
-                  sendEmergency();
-                }
-                return;
-              }
+          {user?.plan === 'elite' && (
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => router.push('/hardware' as any)}
+            >
+              <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
+                <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}>
+                  <Ionicons name="hardware-chip" size={24} color="#3b82f6" />
+                </View>
+                <Text style={styles.actionLabel}>{t('hardwareMonitor') || 'Hardware'}</Text>
+              </BlurView>
+            </Pressable>
+          )}
 
-              Alert.alert(
-                t('emergency').toUpperCase(),
-                message,
-                [
-                  { text: t('cancel'), style: 'cancel' },
-                  {
-                    text: t('getHelp'),
-                    style: 'destructive',
-                    onPress: sendEmergency
+          {user?.plan !== 'starter' && (
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => {
+                const message = t('emergencyConfirm');
+                if (Platform.OS === 'web') {
+                  if (window.confirm(message)) {
+                    sendEmergency();
                   }
-                ]
-              );
-            }}
-          >
-            <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
-              <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
-                <Ionicons name="warning" size={24} color="#ef4444" />
-              </View>
-              <Text style={[styles.actionLabel, { color: '#ef4444' }]}>{t('emergency')}</Text>
-            </BlurView>
-          </Pressable>
+                  return;
+                }
+
+                Alert.alert(
+                  t('emergency').toUpperCase(),
+                  message,
+                  [
+                    { text: t('cancel'), style: 'cancel' },
+                    {
+                      text: t('getHelp'),
+                      style: 'destructive',
+                      onPress: sendEmergency
+                    }
+                  ]
+                );
+              }}
+            >
+              <BlurView intensity={60} tint="dark" style={styles.actionBlur}>
+                <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
+                  <Ionicons name="warning" size={24} color="#ef4444" />
+                </View>
+                <Text style={[styles.actionLabel, { color: '#ef4444' }]}>{t('emergency')}</Text>
+              </BlurView>
+            </Pressable>
+          )}
         </View>
 
         {/* Recent Visitors */}
