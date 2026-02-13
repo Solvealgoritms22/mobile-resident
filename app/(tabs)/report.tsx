@@ -13,7 +13,7 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleS
 
 export default function ReportIncidentScreen() {
     const { t } = useTranslation();
-    const { token, socket } = useAuth();
+    const { token, tenantChannel } = useAuth();
     const { showToast } = useToast();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
@@ -56,7 +56,7 @@ export default function ReportIncidentScreen() {
     }, [activeTab]);
 
     useEffect(() => {
-        if (!socket) return;
+        if (!tenantChannel) return;
 
         const handleRefresh = () => {
             if (activeTab === 'history') {
@@ -64,14 +64,14 @@ export default function ReportIncidentScreen() {
             }
         };
 
-        socket.on('incidentCreated', handleRefresh);
-        socket.on('incidentStatusUpdated', handleRefresh);
+        tenantChannel.bind('incidentCreated', handleRefresh);
+        tenantChannel.bind('incidentStatusUpdated', handleRefresh);
 
         return () => {
-            socket.off('incidentCreated', handleRefresh);
-            socket.off('incidentStatusUpdated', handleRefresh);
+            tenantChannel.unbind('incidentCreated', handleRefresh);
+            tenantChannel.unbind('incidentStatusUpdated', handleRefresh);
         };
-    }, [socket, activeTab]);
+    }, [tenantChannel, activeTab]);
 
     const handleSubmit = async () => {
         if (!incidentType || !description) {

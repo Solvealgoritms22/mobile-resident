@@ -1,4 +1,4 @@
-import { API_URL, PUSHER_KEY, PUSHER_CLUSTER } from '@/constants/api';
+import { API_URL, PUSHER_CLUSTER, PUSHER_KEY } from '@/constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Audio } from 'expo-av';
@@ -7,9 +7,9 @@ import * as Device from 'expo-device';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter, useSegments } from 'expo-router';
+import Pusher from 'pusher-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert, Platform } from 'react-native';
-import Pusher from 'pusher-js';
 
 interface User {
     id: string;
@@ -405,7 +405,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatePushToken,
         onDataRefresh,
         refreshData
-    }), [user, token, isLoading, socket, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData]);
+    }), [user, token, isLoading, pusher, tenantChannel, login, logout, updateUser, updatePushToken, onDataRefresh, refreshData]);
 
     return (
         <AuthContext.Provider value={value}>

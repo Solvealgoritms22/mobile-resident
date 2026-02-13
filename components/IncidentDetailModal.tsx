@@ -38,7 +38,7 @@ interface IncidentDetailModalProps {
 
 export function IncidentDetailModal({ visible, onClose, incident, onCommentAdded }: IncidentDetailModalProps) {
     const { t } = useTranslation();
-    const { token, socket } = useAuth();
+    const { token, tenantChannel } = useAuth();
     const { showToast } = useToast();
     const [comment, setComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -51,7 +51,7 @@ export function IncidentDetailModal({ visible, onClose, incident, onCommentAdded
     }, [incident]);
 
     useEffect(() => {
-        if (!socket || !incident || !visible) return;
+        if (!tenantChannel || !incident || !visible) return;
 
         const handleNewComment = (payload: { incidentReportId: string; comment: Comment }) => {
             if (payload.incidentReportId === incident.id) {
@@ -63,12 +63,12 @@ export function IncidentDetailModal({ visible, onClose, incident, onCommentAdded
             }
         };
 
-        socket.on('commentAdded', handleNewComment);
+        tenantChannel.bind('commentAdded', handleNewComment);
 
         return () => {
-            socket.off('commentAdded', handleNewComment);
+            tenantChannel.unbind('commentAdded', handleNewComment);
         };
-    }, [socket, incident, visible]);
+    }, [tenantChannel, incident, visible]);
 
     if (!incident) return null;
 
