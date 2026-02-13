@@ -1,4 +1,5 @@
 import { API_URL } from '@/constants/api';
+import CryptoJS from 'crypto-js';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -18,6 +19,8 @@ export default function IdentityPassScreen() {
     const { user } = useAuth();
     const { t } = useTranslation();
     const [imageError, setImageError] = React.useState(false);
+    const [qrValue, setQrValue] = React.useState('');
+    const [secondsLeft, setSecondsLeft] = React.useState(30);
 
     const getInitials = (name: string) => {
         return name?.split(' ')
@@ -29,14 +32,39 @@ export default function IdentityPassScreen() {
 
     if (!user) return null;
 
-    // Use user ID or a specific identity token for the QR code
-    const qrValue = JSON.stringify({
-        id: user.id,
-        type: 'RESIDENT_ID',
-        name: user.name,
-        unit: user.residentProfile?.unitNumber || 'N/A',
-        timestamp: new Date().toISOString()
-    });
+    // Generate rotating QR code (TOTP-style)
+    React.useEffect(() => {
+        const updateQR = () => {
+            const now = Math.floor(Date.now() / 1000);
+            const timeLeft = 30 - (now % 30);
+            setSecondsLeft(timeLeft);
+
+            const timestamp = now;
+
+            // Secure HMAC Generation
+            let token = 'invalid-secret';
+            if (user?.qrSecret) {
+                // HMAC(userId:timestamp, secret)
+                const data = `${user.id}:${timestamp}`;
+                token = CryptoJS.HmacSHA256(data, user.qrSecret).toString(CryptoJS.enc.Hex);
+            } else {
+                console.warn('No QR secret found for user');
+            }
+
+            setQrValue(JSON.stringify({
+                id: user.id,
+                type: 'RESIDENT_ID',
+                name: user.name,
+                unit: user.residentProfile?.unitNumber || 'N/A',
+                timestamp: timestamp,
+                token: token
+            }));
+        };
+
+        updateQR();
+        const interval = setInterval(updateQR, 1000);
+        return () => clearInterval(interval);
+    }, [user]);
 
     const getImageUrl = (path?: string) => {
         if (!path) return null;
@@ -105,13 +133,18 @@ export default function IdentityPassScreen() {
                         <View style={styles.qrContainer}>
                             <View style={styles.qrWrapper}>
                                 <QRCode
-                                    value={qrValue}
+                                    value={qrValue || 'loading'}
                                     size={width * 0.55}
                                     color="#ffffff"
                                     backgroundColor="transparent"
                                 />
                             </View>
-                            <Text style={styles.scanHint}>{t('scanHint')}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 8 }}>
+                                <Ionicons name="time-outline" size={16} color={secondsLeft < 10 ? '#ef4444' : '#94a3b8'} />
+                                <Text style={[styles.scanHint, { marginTop: 0, color: secondsLeft < 10 ? '#ef4444' : '#94a3b8' }]}>
+                                    {t('scanHint')} • {secondsLeft}s
+                                </Text>
+                            </View>
                         </View>
 
                         <View style={styles.footerInfo}>

@@ -1,10 +1,12 @@
-import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/translation-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/api';
 
 export default function LoginScreen() {
     const { t } = useTranslation();
@@ -13,6 +15,28 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [brandingLogo, setBrandingLogo] = useState<string | null>(null);
+    const [brandingName, setBrandingName] = useState<string | null>(null);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const tenantId = await AsyncStorage.getItem('tenantId');
+                if (tenantId) {
+                    const res = await fetch(`${API_URL}/tenants/${tenantId}/branding`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.logoUrl) {
+                            setBrandingLogo(`${API_URL}${data.logoUrl}`);
+                        }
+                        if (data.name) {
+                            setBrandingName(data.name);
+                        }
+                    }
+                }
+            } catch { }
+        })();
+    }, []);
 
     const handleLogin = async () => {
         setLoading(true);
@@ -35,9 +59,13 @@ export default function LoginScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <BlurView intensity={40} tint="dark" style={styles.logoContainer}>
-                        <Ionicons name="home" size={64} color="#10b981" />
+                        {brandingLogo ? (
+                            <Image source={{ uri: brandingLogo }} style={{ width: 80, height: 80, borderRadius: 16 }} resizeMode="contain" />
+                        ) : (
+                            <Ionicons name="home" size={64} color="#10b981" />
+                        )}
                     </BlurView>
-                    <Text style={styles.title}>{t('residentPortal')}</Text>
+                    <Text style={styles.title}>{brandingName || t('residentPortal')}</Text>
                     <Text style={styles.subtitle}>{t('signInSubtitle')}</Text>
                 </View>
 

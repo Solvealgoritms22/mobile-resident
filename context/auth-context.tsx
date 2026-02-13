@@ -31,6 +31,7 @@ interface User {
         primaryColor?: string;
         secondaryColor?: string;
     };
+    qrSecret?: string;
 }
 
 interface AuthContextType {
@@ -303,7 +304,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 ...userData,
                 tenantId: tenant?.id,
                 plan: tenant?.plan || 'starter',
-                branding: tenant?.branding
+                branding: tenant?.branding,
+                qrSecret: userData.qrSecret
             };
 
             // Store token and user data
