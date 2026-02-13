@@ -11,5 +11,5 @@ export const API_URL = Platform.select({
     default: 'https://backend-cosevi.vercel.app/api',
 });
 
-export const PUSHER_KEY = '8910086b955700fc2641';
-export const PUSHER_CLUSTER = 'us2';
+export const PUSHER_KEY = '045ed55ed252241b166d';
+export const PUSHER_CLUSTER = 'mt1';
