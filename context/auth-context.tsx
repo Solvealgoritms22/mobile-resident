@@ -1,4 +1,4 @@
-import { API_URL } from '@/constants/api';
+import { API_URL, PUSHER_KEY, PUSHER_CLUSTER } from '@/constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Audio } from 'expo-av';
@@ -9,7 +9,7 @@ import * as Notifications from 'expo-notifications';
 import { useRouter, useSegments } from 'expo-router';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert, Platform } from 'react-native';
-import { io } from 'socket.io-client';
+import Pusher from 'pusher-js';
 
 interface User {
     id: string;
@@ -38,7 +38,8 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    socket: any | null;
+    pusher: Pusher | null;
+    tenantChannel: any | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (partialUser: Partial<User>) => Promise<void>;
@@ -63,7 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [socket, setSocket] = useState<any>(null);
+    const [pusher, setPusher] = useState<Pusher | null>(null);
+    const [tenantChannel, setTenantChannel] = useState<any>(null);
     const router = useRouter();
     const segments = useSegments();
 
@@ -120,63 +122,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user, segments, isLoading]);
 
-    // Global Socket & Emergency Listener
+    // Global Real-time (Pusher) Listener
     useEffect(() => {
-        if (!user) {
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
+        if (!user || !token) {
+            if (pusher) {
+                pusher.disconnect();
+                setPusher(null);
+                setTenantChannel(null);
             }
             return;
         }
 
-        const newSocket = io(API_URL.replace('/api', ''));
-        setSocket(newSocket);
+        console.log('Initializing Pusher for tenant:', user.tenantId);
 
-        newSocket.on('statusUpdate', (data: any) => {
-            console.log('Status update received:', data);
-            if (data.type === 'USER_UPDATED' && data.user && data.user.id === user.id) {
-                console.log('Current user updated! Refreshing session...');
-                updateUser(data.user);
-            }
-            refreshData();
+        const pusherClient = new Pusher(PUSHER_KEY, {
+            cluster: PUSHER_CLUSTER,
+            authEndpoint: `${API_URL}/pusher/auth`,
+            auth: {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'x-tenant-id': user.tenantId,
+                },
+            },
         });
 
-        newSocket.on('visitUpdate', (visit: any) => {
-            console.log('Visit Update Received:', visit);
-            refreshData();
-            if (visit.hostId === user.id) {
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPusher(pusherClient);
+
+        if (user.tenantId) {
+            // Subscribe to visits channel
+            const visitsChannelName = `private-tenant-${user.tenantId}-visits`;
+            const visitsChannel = pusherClient.subscribe(visitsChannelName);
+            setTenantChannel(visitsChannel);
+
+            visitsChannel.bind('visitUpdate', (visit: any) => {
+                console.log('Visit Update Received via Pusher:', visit);
+                refreshData();
+                if (visit.hostId === user.id) {
+                    if (Platform.OS !== 'web') {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    }
+                    const status = visit.status?.replace('_', ' ');
+                    Alert.alert(
+                        'Visit Update',
+                        `Visitor ${visit.visitorName} is now ${status}`,
+                        [{ text: 'OK', style: 'default' }]
+                    );
                 }
-                const status = visit.status?.replace('_', ' ');
-                Alert.alert(
-                    'Visit Update',
-                    `Visitor ${visit.visitorName} is now ${status}`,
-                    [{ text: 'OK', style: 'default' }]
-                );
-            }
-        });
+            });
 
-        newSocket.on('emergencyAlert', (alert: any) => {
-            console.log('Emergency Alert Received:', alert);
+            visitsChannel.bind('emergencyAlert', (alert: any) => {
+                console.log('Emergency Alert Received via Pusher:', alert);
+                const senderRole = alert.sender?.role;
+                if (senderRole === 'SECURITY' || senderRole === 'ADMIN') {
+                    playEmergencySound();
+                    if (Platform.OS !== 'web') {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    }
 
-            // Filter: Only show alerts from Security/Admin authorities to Residents
-            const senderRole = alert.sender?.role;
-            if (senderRole === 'SECURITY' || senderRole === 'ADMIN') {
-                playEmergencySound();
-                if (Platform.OS !== 'web') {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    Alert.alert(
+                        'SECURITY ALERT ⚠️',
+                        `${alert.type?.toUpperCase()?.replace('_', ' ')}\n${alert.location ? `Location: ${alert.location}` : ''}\nDetailed instructions will follow.`,
+                        [{ text: 'I UNDERSTAND', style: 'cancel' }],
+                        { cancelable: false }
+                    );
                 }
+            });
 
-                Alert.alert(
-                    'SECURITY ALERT ⚠️',
-                    `${alert.type?.toUpperCase()?.replace('_', ' ')}\n${alert.location ? `Location: ${alert.location}` : ''}\nDetailed instructions will follow.`,
-                    [{ text: 'I UNDERSTAND', style: 'cancel' }],
-                    { cancelable: false }
-                );
-            }
-        });
+            // Subscribe to status channel
+            const statusChannelName = `private-tenant-${user.tenantId}-status`;
+            const statusChannel = pusherClient.subscribe(statusChannelName);
+
+            statusChannel.bind('statusUpdate', (data: any) => {
+                console.log('Status update received via Pusher:', data);
+                if (data.type === 'USER_UPDATED' && data.user && data.user.id === user.id) {
+                    console.log('Current user updated! Refreshing session...');
+                    updateUser(data.user);
+                }
+                refreshData();
+            });
+        }
 
         // Push Notification Listeners (Native Only)
         let notificationListener: any;
@@ -193,12 +217,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         return () => {
-            newSocket.disconnect();
-            setSocket(null);
+            pusherClient.disconnect();
+            setPusher(null);
+            setTenantChannel(null);
             if (notificationListener) notificationListener.remove();
             if (responseListener) responseListener.remove();
         };
-    }, [user]);
+    }, [user, token]);
 
     // Data Refresh Mechanism
     const refreshCallbacks = React.useRef<(() => void)[]>([]);
@@ -372,7 +397,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         token,
         isLoading,
-        socket,
+        pusher,
+        tenantChannel,
         login,
         logout,
         updateUser,
