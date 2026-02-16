@@ -7,7 +7,7 @@ import * as Device from 'expo-device';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useRouter, useSegments } from 'expo-router';
-import Pusher from 'pusher-js';
+import Pusher from 'pusher-js/react-native';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
