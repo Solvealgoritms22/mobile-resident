@@ -343,7 +343,9 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                                 <TouchableOpacity
                                     style={styles.shareButton}
                                     onPress={async () => {
-                                        const message = `*${t('shareSubject')}*\n\n${t('shareGreeting')} ${visit.visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${visit.accessCode}\n\n${t('shareInstructions')}`;
+                                        const orgName = user?.organizationName || 'ENTRAR';
+                                        const subject = `${t('shareSubject')} ${orgName}*`;
+                                        const message = `${subject}\n\n${t('shareGreeting')} ${visit.visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${visit.accessCode}\n\n${t('shareInstructions')}`;
 
                                         try {
                                             if (viewRef.current) {
@@ -355,7 +357,7 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                                                 if (await Sharing.isAvailableAsync()) {
                                                     await Sharing.shareAsync(uri, {
                                                         mimeType: 'image/png',
-                                                        dialogTitle: t('shareSubject'),
+                                                        dialogTitle: subject.replace(/\*/g, ''),
                                                         UTI: 'public.png',
                                                     });
                                                 } else {
