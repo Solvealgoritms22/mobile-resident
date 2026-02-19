@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import * as Sharing from 'expo-sharing';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,7 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
     const { t } = useTranslation();
     const [cancelling, setCancelling] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+    const viewRef = useRef<View>(null);
 
     if (!visit) return null;
 
@@ -139,24 +142,73 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                             )}
                         </View>
 
-                        {/* QR Code Section (if available) */}
+                        {/* QR Code Section (if available) - Redesigned as Invitation Card */}
                         {(visit.qrCode || visit.accessCode) && visit.status !== 'EXPIRED' && (
-                            <View style={styles.qrSection}>
-                                <View style={styles.qrContainer}>
-                                    <QRCode
-                                        value={visit.qrCode || visit.accessCode || 'INVALID'}
-                                        size={180}
-                                        color="#000000"
-                                        backgroundColor="#ffffff"
-                                        quietZone={10}
-                                    />
-                                </View>
+                            <View
+                                ref={viewRef}
+                                collapsable={false}
+                                style={{
+                                    width: '100%',
+                                    alignItems: 'center',
+                                    backgroundColor: '#ffffff',
+                                    padding: 24,
+                                    borderRadius: 16,
+                                    marginTop: 0,
+                                    marginBottom: 24
+                                }}
+                            >
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginBottom: 8 }}>
+                                    {t('shareSubject').replace(/\*/g, '')}
+                                </Text>
+                                <Text style={{ fontSize: 16, color: '#334155', marginBottom: 24 }}>
+                                    {t('shareGreeting')} {visit.visitorName || t('friend')}
+                                </Text>
+
+                                <QRCode
+                                    value={visit.qrCode || visit.accessCode || 'INVALID'}
+                                    size={180}
+                                    color="#0f172a"
+                                    backgroundColor="transparent"
+                                />
+
                                 {visit.accessCode && (
-                                    <View style={styles.accessCodeContainer}>
-                                        <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
-                                        <Text style={styles.accessCodeValue}>{visit.accessCode}</Text>
+                                    <View style={{ marginTop: 24, alignItems: 'center', width: '100%' }}>
+                                        <Text style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '600' }}>
+                                            {t('manualEntryCode')}
+                                        </Text>
+                                        <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', marginVertical: 4 }}>
+                                            {visit.accessCode}
+                                        </Text>
                                     </View>
                                 )}
+
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
+                                    <View>
+                                        <Text style={{ fontSize: 12, color: '#64748b' }}>{t('visitorName')}</Text>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a' }}>{visit.visitorName}</Text>
+                                    </View>
+                                    <View style={{ alignItems: 'flex-end' }}>
+                                        <Text style={{ fontSize: 12, color: '#64748b' }}>{t('validUntil')}</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }}>
+                                            {new Date(visit.validUntil).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {visit.licensePlate && (
+                                    <View style={{ width: '100%', marginTop: 16 }}>
+                                        <Text style={{ fontSize: 12, color: '#64748b' }}>{t('vehiclePlate')}</Text>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a' }}>{visit.licensePlate}</Text>
+                                    </View>
+                                )}
+
+                                <Text style={{ marginTop: 24, textAlign: 'center', color: '#64748b', fontSize: 14 }}>
+                                    {t('shareInstructions')}
+                                </Text>
+
+                                <Text style={{ marginTop: 8, textAlign: 'center', color: '#64748b', fontSize: 14, fontStyle: 'italic' }}>
+                                    {t('shareClosing')}
+                                </Text>
                             </View>
                         )}
 
@@ -292,16 +344,32 @@ export const VisitDetailModal = ({ visible, onClose, visit }: VisitDetailModalPr
                                     style={styles.shareButton}
                                     onPress={async () => {
                                         const message = `*${t('shareSubject')}*\n\n${t('shareGreeting')} ${visit.visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${visit.accessCode}\n\n${t('shareInstructions')}`;
-                                        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
                                         try {
-                                            const supported = await Linking.canOpenURL(url);
-                                            if (supported) {
-                                                await Linking.openURL(url);
+                                            if (viewRef.current) {
+                                                const uri = await captureRef(viewRef, {
+                                                    format: 'png',
+                                                    quality: 0.8,
+                                                });
+
+                                                if (await Sharing.isAvailableAsync()) {
+                                                    await Sharing.shareAsync(uri, {
+                                                        mimeType: 'image/png',
+                                                        dialogTitle: t('shareSubject'),
+                                                        UTI: 'public.png',
+                                                    });
+                                                } else {
+                                                    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                                                    await Linking.openURL(url);
+                                                }
                                             } else {
-                                                Alert.alert('Sharing', message);
+                                                const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                                                await Linking.openURL(url);
                                             }
                                         } catch (error) {
-                                            console.error('Failed to share:', error);
+                                            console.error('Failed to capture or share:', error);
+                                            const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                                            await Linking.openURL(url);
                                         }
                                     }}
                                 >

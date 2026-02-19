@@ -220,29 +220,66 @@ export default function InviteScreen() {
                         {t('validFor')} {formatDuration(duration)}
                     </Text>
 
-                    <View ref={viewRef} collapsable={false} style={{ width: '100%', alignItems: 'center' }}>
-                        <BlurView intensity={40} tint="dark" style={styles.qrCard}>
-                            <QRCode
-                                value={qrCode || JSON.stringify({ name: visitorName, plate, valid: true })}
-                                size={200}
-                                backgroundColor="transparent"
-                                color="#ffffff"
-                            />
-                            <View style={styles.accessCodeContainer}>
-                                <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
-                                <Text style={styles.accessCodeValue}>{accessCode}</Text>
+                    <View
+                        ref={viewRef}
+                        collapsable={false}
+                        style={{
+                            width: '100%',
+                            alignItems: 'center',
+                            backgroundColor: '#ffffff',
+                            padding: 24,
+                            borderRadius: 16,
+                            marginTop: 20
+                        }}
+                    >
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginBottom: 8 }}>
+                            {t('shareSubject').replace(/\*/g, '')}
+                        </Text>
+                        <Text style={{ fontSize: 16, color: '#334155', marginBottom: 24 }}>
+                            {t('shareGreeting')} {visitorName || t('friend')}
+                        </Text>
+
+                        <QRCode
+                            value={qrCode || JSON.stringify({ name: visitorName, plate, valid: true })}
+                            size={200}
+                            backgroundColor="transparent"
+                            color="#0f172a"
+                        />
+
+                        <View style={{ marginTop: 24, alignItems: 'center', width: '100%' }}>
+                            <Text style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '600' }}>
+                                {t('manualEntryCode')}
+                            </Text>
+                            <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#0f172a', marginVertical: 4 }}>
+                                {accessCode}
+                            </Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
+                            <View>
+                                <Text style={{ fontSize: 12, color: '#64748b' }}>{t('visitorName')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a' }}>{visitorName}</Text>
                             </View>
-                            <Text style={styles.visitorNameLabel}>{visitorName}</Text>
-                            <Text style={styles.plateLabel}>{plate || t('noVehicle')}</Text>
-                            {selectedSpaceId && (
-                                <View style={styles.successSpaceBadge}>
-                                    <Ionicons name="car" size={16} color="#10b981" />
-                                    <Text style={styles.successSpaceText}>
-                                        {t('tabVehicles')}: {assignedSpaces.find(s => s.id === selectedSpaceId)?.name || t('active')}
-                                    </Text>
-                                </View>
-                            )}
-                        </BlurView>
+                            <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={{ fontSize: 12, color: '#64748b' }}>{t('shareDuration')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a' }}>{formatDuration(duration)}</Text>
+                            </View>
+                        </View>
+
+                        {plate && (
+                            <View style={{ width: '100%', marginTop: 16 }}>
+                                <Text style={{ fontSize: 12, color: '#64748b' }}>{t('vehiclePlate')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a' }}>{plate}</Text>
+                            </View>
+                        )}
+
+                        <Text style={{ marginTop: 24, textAlign: 'center', color: '#64748b', fontSize: 14 }}>
+                            {t('shareInstructions')}
+                        </Text>
+
+                        <Text style={{ marginTop: 8, textAlign: 'center', color: '#64748b', fontSize: 14, fontStyle: 'italic' }}>
+                            {t('shareClosing')}
+                        </Text>
                     </View>
 
                     <TouchableOpacity onPress={handleShare} activeOpacity={0.8} style={{ width: '100%' }}>
