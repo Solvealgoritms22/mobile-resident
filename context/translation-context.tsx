@@ -44,6 +44,7 @@ const translations: Record<Language, Record<string, string>> = {
         welcomeBack: 'Welcome back!',
         enterEmailPass: 'Please enter both email and password',
         errorLogin: 'Login failed. Check credentials.',
+        password: 'Password',
 
         // Home
         welcome: 'Welcome',
@@ -239,6 +240,7 @@ const translations: Record<Language, Record<string, string>> = {
         welcomeBack: '¡Bienvenido de nuevo!',
         enterEmailPass: 'Por favor ingrese correo y contraseña',
         errorLogin: 'Error al iniciar sesión. Verifique sus credenciales.',
+        password: 'Contraseña',
 
         // Home
         welcome: 'Bienvenido',
