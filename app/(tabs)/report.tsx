@@ -41,6 +41,10 @@ export default function ReportIncidentScreen() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReports(response.data);
+            if (selectedIncident) {
+                const updated = response.data.find((r: any) => r.id === selectedIncident.id);
+                if (updated) setSelectedIncident(updated);
+            }
         } catch (error) {
             console.error('Failed to fetch reports:', error);
             showToast(t('errorGeneric'), 'error');
@@ -66,10 +70,12 @@ export default function ReportIncidentScreen() {
 
         tenantChannel.bind('incidentCreated', handleRefresh);
         tenantChannel.bind('incidentStatusUpdated', handleRefresh);
+        tenantChannel.bind('commentAdded', handleRefresh);
 
         return () => {
             tenantChannel.unbind('incidentCreated', handleRefresh);
             tenantChannel.unbind('incidentStatusUpdated', handleRefresh);
+            tenantChannel.unbind('commentAdded', handleRefresh);
         };
     }, [tenantChannel, activeTab]);
 
