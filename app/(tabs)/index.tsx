@@ -98,7 +98,7 @@ export default function DashboardScreen() {
           <View style={styles.headerContent}>
             <View style={{ flex: 1 }}>
               {logo && <Image source={{ uri: logo }} style={{ width: 80, height: 24, marginBottom: 8 }} contentFit="contain" />}
-              <Text style={[styles.role, { color: primary }]}>{t('residentAccount').split(' ')[0]}</Text>
+              <Text style={[styles.role, { color: '#3b82f6' }]}>{t('residentAccount').split(' ')[0]}</Text>
               <Text style={styles.userName}>{user?.name || t('resident')}</Text>
               <Text style={styles.badge}>{user?.email}</Text>
             </View>

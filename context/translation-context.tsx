@@ -205,6 +205,10 @@ const translations: Record<Language, Record<string, string>> = {
         visitApproved: 'Visit approved successfully',
         visitDenied: 'Visit denied',
         search: 'Search',
+        day: 'Day',
+        days: 'Days',
+        month: 'Month',
+        months: 'Months',
     },
     es: {
         // Tabs
@@ -401,6 +405,10 @@ const translations: Record<Language, Record<string, string>> = {
         visitApproved: 'Visita aprobada exitosamente',
         visitDenied: 'Visita denegada',
         search: 'Buscar',
+        day: 'Día',
+        days: 'Días',
+        month: 'Mes',
+        months: 'Meses',
     }
 };
 

@@ -10,9 +10,11 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import * as Sharing from 'expo-sharing';
+import React, { useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
 
 export default function InviteScreen() {
     const { user, token } = useAuth();
@@ -34,6 +36,28 @@ export default function InviteScreen() {
     const [isVip, setIsVip] = useState(false);
     const [isSingleEntry, setIsSingleEntry] = useState(false);
     const [category, setCategory] = useState<string>('FAMILIAR');
+    const viewRef = useRef<View>(null);
+
+    const formatDuration = (hours: string) => {
+        const h = parseInt(hours);
+        if (isNaN(h)) return hours;
+
+        if (h === 876000) return t('indefinite');
+        // Check for months first if specific values match, 
+        // otherwise general logic for days/hours
+        if (h === 720) return `1 ${t('month')}`;
+        if (h === 2160) return `3 ${t('months')}`;
+
+        if (h >= 24) {
+            // If exactly divisible by 24, show as days
+            if (h % 24 === 0) {
+                const days = Math.floor(h / 24);
+                return `${days} ${days === 1 ? t('day') : t('days')}`;
+            }
+        }
+
+        return `${h} ${t('hoursAbbr')}`;
+    };
 
     React.useEffect(() => {
         if (step === 1) {
@@ -146,20 +170,36 @@ export default function InviteScreen() {
     };
 
     const handleShare = async () => {
-        const message = `${t('shareSubject')}\n\n${t('shareGreeting')} ${visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${accessCode}\n*${t('shareDuration')}:* ${duration} ${t('hoursAbbr')}\n\n${t('shareInstructions')}\n\n${t('shareClosing')}`;
-        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        const formattedDuration = formatDuration(duration);
+        const message = `${t('shareSubject')}\n\n${t('shareGreeting')} ${visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${accessCode}\n*${t('shareDuration')}:* ${formattedDuration}\n\n${t('shareInstructions')}\n\n${t('shareClosing')}`;
 
         try {
-            const supported = await Linking.canOpenURL(url);
-            if (supported) {
-                await Linking.openURL(url);
+            if (viewRef.current) {
+                const uri = await captureRef(viewRef, {
+                    format: 'png',
+                    quality: 0.8,
+                });
+
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(uri, {
+                        mimeType: 'image/png',
+                        dialogTitle: t('shareSubject'),
+                        UTI: 'public.png',
+                    });
+                } else {
+                    // Fallback for web or unsupported
+                    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                    await Linking.openURL(url);
+                }
             } else {
-                // Fallback to generic share if WhatsApp specifies failure
-                Alert.alert('Sharing', message);
+                // Fallback if viewRef is not set
+                const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                await Linking.openURL(url);
             }
         } catch (error) {
-            console.error('Failed to share via WhatsApp:', error);
-            Alert.alert('Sharing', message);
+            console.error('Failed to capture or share:', error);
+            const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            await Linking.openURL(url);
         }
     };
 
@@ -177,36 +217,33 @@ export default function InviteScreen() {
                     </BlurView>
                     <Text style={styles.successTitle}>{t('invitationCreated')}</Text>
                     <Text style={styles.successSubtitle}>
-                        {t('validFor')} {
-                            duration === '720' ? t('oneMonth') :
-                                duration === '2160' ? t('threeMonths') :
-                                    duration === '876000' ? t('indefinite') :
-                                        `${duration} ${t('hoursAbbr')}`
-                        }
+                        {t('validFor')} {formatDuration(duration)}
                     </Text>
 
-                    <BlurView intensity={40} tint="dark" style={styles.qrCard}>
-                        <QRCode
-                            value={qrCode || JSON.stringify({ name: visitorName, plate, valid: true })}
-                            size={200}
-                            backgroundColor="transparent"
-                            color="#ffffff"
-                        />
-                        <View style={styles.accessCodeContainer}>
-                            <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
-                            <Text style={styles.accessCodeValue}>{accessCode}</Text>
-                        </View>
-                        <Text style={styles.visitorNameLabel}>{visitorName}</Text>
-                        <Text style={styles.plateLabel}>{plate || t('noVehicle')}</Text>
-                        {selectedSpaceId && (
-                            <View style={styles.successSpaceBadge}>
-                                <Ionicons name="car" size={16} color="#10b981" />
-                                <Text style={styles.successSpaceText}>
-                                    {t('tabVehicles')}: {assignedSpaces.find(s => s.id === selectedSpaceId)?.name || t('active')}
-                                </Text>
+                    <View ref={viewRef} collapsable={false} style={{ width: '100%', alignItems: 'center' }}>
+                        <BlurView intensity={40} tint="dark" style={styles.qrCard}>
+                            <QRCode
+                                value={qrCode || JSON.stringify({ name: visitorName, plate, valid: true })}
+                                size={200}
+                                backgroundColor="transparent"
+                                color="#ffffff"
+                            />
+                            <View style={styles.accessCodeContainer}>
+                                <Text style={styles.accessCodeLabel}>{t('manualEntryCode')}</Text>
+                                <Text style={styles.accessCodeValue}>{accessCode}</Text>
                             </View>
-                        )}
-                    </BlurView>
+                            <Text style={styles.visitorNameLabel}>{visitorName}</Text>
+                            <Text style={styles.plateLabel}>{plate || t('noVehicle')}</Text>
+                            {selectedSpaceId && (
+                                <View style={styles.successSpaceBadge}>
+                                    <Ionicons name="car" size={16} color="#10b981" />
+                                    <Text style={styles.successSpaceText}>
+                                        {t('tabVehicles')}: {assignedSpaces.find(s => s.id === selectedSpaceId)?.name || t('active')}
+                                    </Text>
+                                </View>
+                            )}
+                        </BlurView>
+                    </View>
 
                     <TouchableOpacity onPress={handleShare} activeOpacity={0.8} style={{ width: '100%' }}>
                         <LinearGradient colors={['#25D366', '#1da851']} style={styles.shareButton}>

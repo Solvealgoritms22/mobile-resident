@@ -1,7 +1,7 @@
 import { API_URL } from '@/constants/api';
-import CryptoJS from 'crypto-js';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import CryptoJS from 'crypto-js';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +20,7 @@ export default function IdentityPassScreen() {
     const { t } = useTranslation();
     const [imageError, setImageError] = React.useState(false);
     const [qrValue, setQrValue] = React.useState('');
-    const [secondsLeft, setSecondsLeft] = React.useState(30);
+    const [secondsLeft, setSecondsLeft] = React.useState(60);
 
     const getInitials = (name: string) => {
         return name?.split(' ')
@@ -36,10 +36,12 @@ export default function IdentityPassScreen() {
     React.useEffect(() => {
         const updateQR = () => {
             const now = Math.floor(Date.now() / 1000);
-            const timeLeft = 30 - (now % 30);
+            const windowSize = 60;
+            const timeLeft = windowSize - (now % windowSize);
             setSecondsLeft(timeLeft);
 
-            const timestamp = now;
+            // Use the start of the window as timestamp so it doesn't change every second
+            const timestamp = now - (now % windowSize);
 
             // Secure HMAC Generation
             let token = 'invalid-secret';
