@@ -161,7 +161,7 @@ const translations: Record<Language, Record<string, string>> = {
         personalNote: 'This pass is personal and non-transferable. Use it for building access and identification.',
 
         // Share Message
-        shareSubject: '*Invitation to ENTRAR*',
+        shareSubject: '*Invitation to*',
         shareGreeting: 'Hello',
         friend: 'Friend',
         shareBody: 'I have generated an invitation for you.',
@@ -361,7 +361,7 @@ const translations: Record<Language, Record<string, string>> = {
         personalNote: 'Este pase es personal e intransferible. Úselo para acceso al edificio e identificación.',
 
         // Share Message
-        shareSubject: '*Invitación a ENTRAR*',
+        shareSubject: '*Invitación a*',
         shareGreeting: 'Hola',
         friend: 'Amigo/a',
         shareBody: 'He generado una invitación para ti.',

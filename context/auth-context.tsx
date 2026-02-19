@@ -33,6 +33,7 @@ interface User {
     };
     qrSecret?: string;
     subscriptionStatus?: string;
+    organizationName?: string;
 }
 
 interface AuthContextType {
@@ -332,7 +333,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 plan: tenant?.plan || 'starter',
                 branding: tenant?.branding,
                 qrSecret: userData.qrSecret,
-                subscriptionStatus: tenant?.subscriptionStatus || 'ACTIVE'
+                subscriptionStatus: tenant?.subscriptionStatus || 'ACTIVE',
+                organizationName: tenant?.name || 'ENTRAR'
             };
 
             // Store token and user data

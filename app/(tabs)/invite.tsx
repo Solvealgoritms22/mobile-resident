@@ -233,7 +233,7 @@ export default function InviteScreen() {
                         }}
                     >
                         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginBottom: 8 }}>
-                            {t('shareSubject').replace(/\*/g, '')}
+                            {t('shareSubject').replace(/\*/g, '')} {user?.organizationName || 'ENTRAR'}
                         </Text>
                         <Text style={{ fontSize: 16, color: '#334155', marginBottom: 24 }}>
                             {t('shareGreeting')} {visitorName || t('friend')}
