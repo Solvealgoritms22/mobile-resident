@@ -171,7 +171,10 @@ export default function InviteScreen() {
 
     const handleShare = async () => {
         const formattedDuration = formatDuration(duration);
-        const message = `${t('shareSubject')}\n\n${t('shareGreeting')} ${visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${accessCode}\n*${t('shareDuration')}:* ${formattedDuration}\n\n${t('shareInstructions')}\n\n${t('shareClosing')}`;
+        const orgName = user?.organizationName || 'ENTRAR';
+        const subject = `${t('shareSubject')} ${orgName}*`;
+
+        const message = `${subject}\n\n${t('shareGreeting')} ${visitorName || t('friend')},\n\n${t('shareBody')}\n\n*${t('shareAccessCode')}:* ${accessCode}\n*${t('shareDuration')}:* ${formattedDuration}\n\n${t('shareInstructions')}\n\n${t('shareClosing')}`;
 
         try {
             if (viewRef.current) {
@@ -183,7 +186,7 @@ export default function InviteScreen() {
                 if (await Sharing.isAvailableAsync()) {
                     await Sharing.shareAsync(uri, {
                         mimeType: 'image/png',
-                        dialogTitle: t('shareSubject'),
+                        dialogTitle: subject.replace(/\*/g, ''),
                         UTI: 'public.png',
                     });
                 } else {
