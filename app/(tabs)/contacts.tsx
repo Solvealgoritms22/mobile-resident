@@ -9,7 +9,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ContactsScreen() {
     const router = useRouter();
@@ -115,14 +115,24 @@ export default function ContactsScreen() {
                     )}
                 </BlurView>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-                    {loading ? (
-                        <View style={{ gap: 12 }}>
-                            {[1, 2, 3, 4].map(i => <Skeleton key={i} height={80} borderRadius={20} />)}
-                        </View>
-                    ) : filteredContacts.length > 0 ? (
-                        filteredContacts.map((contact) => (
-                            <BlurView key={contact.id} intensity={40} tint="dark" style={styles.contactCard}>
+                {loading ? (
+                    <View style={{ gap: 12, paddingBottom: 40 }}>
+                        {[1, 2, 3, 4].map(i => <Skeleton key={i} height={80} borderRadius={20} />)}
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredContacts}
+                        keyExtractor={(item) => item.id}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.1)" />
+                                <Text style={styles.emptyText}>{t('noContactsFound')}</Text>
+                            </View>
+                        }
+                        renderItem={({ item: contact }) => (
+                            <BlurView intensity={40} tint="dark" style={styles.contactCard}>
                                 <View style={styles.contactInfo}>
                                     <View style={styles.avatarContainer}>
                                         {(contact.profileImage && !imageErrors[contact.id]) ? (
@@ -164,14 +174,9 @@ export default function ContactsScreen() {
                                     </Pressable>
                                 </View>
                             </BlurView>
-                        ))
-                    ) : (
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.1)" />
-                            <Text style={styles.emptyText}>{t('noContactsFound')}</Text>
-                        </View>
-                    )}
-                </ScrollView>
+                        )}
+                    />
+                )}
             </View>
         </LinearGradient>
     );

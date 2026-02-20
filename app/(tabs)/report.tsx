@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ReportIncidentScreen() {
     const { t } = useTranslation();
@@ -188,63 +188,75 @@ export default function ReportIncidentScreen() {
         </View>
     );
 
-    const renderHistory = () => (
-        <View style={styles.tabContent}>
-            {reports.length > 0 ? (
-                reports.map((item: any) => {
-                    const getStatusColor = (status: string) => {
-                        switch (status?.toUpperCase()) {
-                            case 'OPEN': return '#ef4444';
-                            case 'INVESTIGATING': return '#f59e0b';
-                            case 'RESOLVED': return '#10b981';
-                            default: return '#64748b';
-                        }
-                    };
-
-                    return (
-                        <Pressable
-                            key={item.id}
-                            style={styles.reportItemContainer}
-                            onPress={() => {
-                                setSelectedIncident(item);
-                                setModalVisible(true);
-                            }}
-                        >
-                            <BlurView intensity={30} tint="dark" style={styles.reportItem}>
-                                <View style={styles.reportHeader}>
-                                    <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20`, borderColor: getStatusColor(item.status) }]}>
-                                        <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
-                                    </View>
-                                    <Text style={styles.reportDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                                </View>
-                                <Text style={styles.reportType}>{item.type.replace('_', ' ')}</Text>
-                                <Text style={styles.reportDesc} numberOfLines={2}>{item.description}</Text>
-                                <View style={styles.reportFooter}>
-                                    <View style={styles.commentCount}>
-                                        <Ionicons name="chatbubbles-outline" size={16} color="#3b82f6" />
-                                        <Text style={styles.commentCountText}>{item.comments?.length || 0} {t('discussion')}</Text>
-                                    </View>
-                                    <View style={styles.viewButton}>
-                                        <Text style={styles.viewButtonText}>{t('viewDiscussion')}</Text>
-                                        <Ionicons name="chevron-forward" size={14} color="#3b82f6" />
-                                    </View>
-                                </View>
-                            </BlurView>
-                        </Pressable>
-                    );
-                })
-            ) : refreshing ? (
+    const renderHistory = () => {
+        if (refreshing && reports.length === 0) {
+            return (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#3b82f6" />
                 </View>
-            ) : (
-                <View style={styles.emptyContainer}>
-                    <Ionicons name="document-text-outline" size={48} color="rgba(255,255,255,0.1)" />
-                    <Text style={styles.emptyText}>{t('noReportsFound')}</Text>
-                </View>
-            )}
-        </View>
-    );
+            );
+        }
+
+        const getStatusColor = (status: string) => {
+            switch (status?.toUpperCase()) {
+                case 'OPEN': return '#ef4444';
+                case 'INVESTIGATING': return '#f59e0b';
+                case 'RESOLVED': return '#10b981';
+                default: return '#64748b';
+            }
+        };
+
+        return (
+            <FlatList
+                data={reports}
+                keyExtractor={(item: any) => item.id}
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={fetchHistory}
+                        tintColor="#ffffff"
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="document-text-outline" size={48} color="rgba(255,255,255,0.1)" />
+                        <Text style={styles.emptyText}>{t('noReportsFound')}</Text>
+                    </View>
+                }
+                renderItem={({ item }) => (
+                    <Pressable
+                        style={styles.reportItemContainer}
+                        onPress={() => {
+                            setSelectedIncident(item);
+                            setModalVisible(true);
+                        }}
+                    >
+                        <BlurView intensity={30} tint="dark" style={styles.reportItem}>
+                            <View style={styles.reportHeader}>
+                                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20`, borderColor: getStatusColor(item.status) }]}>
+                                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+                                </View>
+                                <Text style={styles.reportDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                            </View>
+                            <Text style={styles.reportType}>{item.type.replace('_', ' ')}</Text>
+                            <Text style={styles.reportDesc} numberOfLines={2}>{item.description}</Text>
+                            <View style={styles.reportFooter}>
+                                <View style={styles.commentCount}>
+                                    <Ionicons name="chatbubbles-outline" size={16} color="#3b82f6" />
+                                    <Text style={styles.commentCountText}>{item.comments?.length || 0} {t('discussion')}</Text>
+                                </View>
+                                <View style={styles.viewButton}>
+                                    <Text style={styles.viewButtonText}>{t('viewDiscussion')}</Text>
+                                    <Ionicons name="chevron-forward" size={14} color="#3b82f6" />
+                                </View>
+                            </View>
+                        </BlurView>
+                    </Pressable>
+                )}
+            />
+        );
+    };
 
     return (
         <LinearGradient colors={['#0f172a', '#1e293b', '#334155']} style={styles.container}>
@@ -271,18 +283,13 @@ export default function ReportIncidentScreen() {
                 </Pressable>
             </View>
 
-            <ScrollView
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={fetchHistory}
-                        tintColor="#ffffff"
-                    />
-                }
-            >
-                {activeTab === 'new' ? renderNewReport() : renderHistory()}
-            </ScrollView>
+            {activeTab === 'new' ? (
+                <ScrollView contentContainerStyle={styles.content}>
+                    {renderNewReport()}
+                </ScrollView>
+            ) : (
+                renderHistory()
+            )}
 
             <IncidentDetailModal
                 visible={modalVisible}
